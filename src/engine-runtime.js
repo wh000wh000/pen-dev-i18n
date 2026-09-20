@@ -21,6 +21,8 @@
 
   var prev = window.__ZH_PATCH__
   if (prev && prev.version === VER) return { ok: true, skipped: 'same-version', version: VER }
+  var langChanged = !!(prev && prev.lang && prev.lang !== BOOT.lang)
+  if (prev && prev.restore) { try { prev.restore() } catch (e) {} }
   if (prev && prev.destroy) { try { prev.destroy() } catch (e) {} }
 
   // ---- 动态文案规则 ----------------------------------------------------------
@@ -125,12 +127,16 @@
   var stats = { text: 0, attr: 0, pseudo: 0 }
   // 去重后的「已翻译原文」。重新注入时继承上一次的结果，
   // 这样覆盖率反映的是「本页生命周期内翻译过多少」，而不是本次注入的增量。
-  var translatedSet = (prev && prev.__translated) || {}
+  var translatedSet = (prev && prev.__translated && prev.__lang === BOOT.lang) ? prev.__translated : {}
+  var ORIG_KEY = '__zhPatchOrig'
   function doText(node) {
     if (blockedText(node)) return
     var v = node.nodeValue
     if (!v || v.length > LIMIT) return
     var t = translate(v)
+    if (t !== null && t !== v && node[ORIG_KEY] === undefined) {
+      try { Object.defineProperty(node, ORIG_KEY, { value: v, writable: true, configurable: true, enumerable: false }) } catch (e) { node[ORIG_KEY] = v }
+    }
     if (t !== null && t !== v) { translatedSet[v.trim()] = 1; node.nodeValue = t; stats.text++ }
   }
   function doAttrs(el) {
@@ -141,6 +147,10 @@
       if (!v || v.length > LIMIT) continue
       var t = translate(v)
       if (t !== null && t !== v) {
+        if (!el[ORIG_KEY]) {
+          try { Object.defineProperty(el, ORIG_KEY, { value: {}, writable: true, configurable: true, enumerable: false }) } catch (e) { el[ORIG_KEY] = {} }
+        }
+        if (el[ORIG_KEY][a] === undefined) el[ORIG_KEY][a] = v
         translatedSet[v.trim()] = 1
         if (PSEUDO_ATTRS.indexOf(a) >= 0) { ensureCss(v, t); stats.pseudo++ }
         el.setAttribute(a, t)
@@ -180,6 +190,27 @@
     if (!scheduled) { scheduled = true; (window.requestAnimationFrame || setTimeout)(flush) }
   }
   function scanAll() { if (document.body) schedule(document.body) }
+
+  /** 把上一次翻译过的节点还原成原文（换语言/换词典时先做这一步） */
+  function restoreAll() {
+    if (!document.body) return 0
+    var n = 0
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+    while (w.nextNode()) {
+      var node = w.currentNode
+      if (node[ORIG_KEY] !== undefined && node.nodeValue !== node[ORIG_KEY]) { node.nodeValue = node[ORIG_KEY]; n++ }
+    }
+    var els = document.body.querySelectorAll('*')
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i]
+      var keep = el[ORIG_KEY]
+      if (!keep) continue
+      for (var a in keep) {
+        if (el.getAttribute(a) !== keep[a]) { el.setAttribute(a, keep[a]); n++ }
+      }
+    }
+    return n
+  }
 
   // ---- 覆盖率审计（给 Agent 用的机器可读接口）--------------------------------
   function audit() {
@@ -266,17 +297,39 @@
       el.onmouseenter = function () { el.style.opacity = '1' }
       el.onmouseleave = function () { el.style.opacity = String(BRAND.opacity == null ? 0.5 : BRAND.opacity) }
 
-      var text = BRAND.text || '中文汉化'
+      var text = BRAND.text || '本地化补丁'
       var link = BRAND.link
-      var label = link ? document.createElement('a') : document.createElement('span')
+      var host = link ? String(link).replace(/^https?:\/\//, '').replace(/\/$/, '') : ''
+      var label = document.createElement('span')
+      label.style.color = 'inherit'
+      label.style.textDecoration = 'none'
+      label.style.cursor = link ? 'pointer' : 'default'
+      label.textContent = text + (host ? '  ' + host : '')
+      // 宿主 App 常拦截 window.open，所以点击 = 复制网址（更可靠，也不打断用户）
       if (link) {
-        label.href = link
-        label.target = '_blank'
-        label.rel = 'noopener noreferrer'
-        label.style.color = 'inherit'
-        label.style.textDecoration = 'none'
+        label.title = '点击复制网址：' + link
+        label.onclick = function (e) {
+          e.preventDefault(); e.stopPropagation()
+          var done = function () {
+            var old = label.textContent
+            label.textContent = '已复制 ' + host
+            setTimeout(function () { label.textContent = old }, 1200)
+          }
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(link).then(done, function () { fallback() })
+            } else fallback()
+          } catch (err) { fallback() }
+          function fallback() {
+            try {
+              var ta = document.createElement('textarea')
+              ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0'
+              document.body.appendChild(ta); ta.select(); document.execCommand('copy')
+              document.body.removeChild(ta); done()
+            } catch (err2) { done() }
+          }
+        }
       }
-      label.textContent = text + (link ? '  ' + String(link).replace(/^https?:\/\//, '') : '')
       el.appendChild(label)
 
       if (BRAND.dismissible !== false) {
@@ -314,6 +367,8 @@
 
   window.__ZH_PATCH__ = {
     version: VER,
+    lang: BOOT.lang || null,
+    restore: restoreAll,
     __translated: translatedSet,
     dictSize: Object.keys(DICT).length,
     applyNow: scanAll,

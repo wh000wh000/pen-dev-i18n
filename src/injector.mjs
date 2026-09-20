@@ -28,6 +28,7 @@ export function buildBootScript(config, dict) {
     attrMaxLength: config.engine.attrMaxLength,
     rules: config.engine.rules,
     branding: config.branding || { enabled: false },
+    lang: config.lang || null,
   }
   return `window.__ZH_PATCH_BOOT__ = ${JSON.stringify(boot)};\n${ENGINE_SRC}`
 }
@@ -142,7 +143,7 @@ export async function extractStrings(config, { match, includeAttrs = true } = {}
 }
 
 /** 守护循环 */
-export async function watch(config, dict, { onEvent = () => {}, signal } = {}) {
+export async function watch(config, dict, { onEvent = () => {}, signal, reload = null } = {}) {
   const idleMs = config.watch?.exitAfterIdleMs ?? 600000
   let lastSeen = Date.now()
   let lastMenu = ''
@@ -151,6 +152,18 @@ export async function watch(config, dict, { onEvent = () => {}, signal } = {}) {
 
   const tick = async () => {
     if (stopped) return
+    // 词典/配置可能在运行期被改（换语言、加词条）——每次 tick 问一遍要不要重载
+    if (reload) {
+      try {
+        const fresh = await reload()
+        if (fresh) {
+          config = fresh.config
+          dict = fresh.dict
+          lastMenu = ''
+          onEvent('reload', { entries: Object.keys(dict).length, lang: config.lang })
+        }
+      } catch (e) { onEvent('reload-error', { error: String(e.message || e) }) }
+    }
     const results = await injectTargets(config, dict)
     if (config.debug.pagePort && (await portAlive(config.debug.pagePort))) lastSeen = Date.now()
     for (const r of results) if (r.result && !r.result.skipped) onEvent('inject', r)

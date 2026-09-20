@@ -1,8 +1,14 @@
 # zh-patch
 
-**给 Electron 应用做运行时中文化 —— 不修改 App 本体、可一键撤回，并且对 AI Agent 友好。**
+**给 Electron 应用做运行时本地化 —— 不修改 App 本体、可一键撤回，并且对 AI Agent 友好。**
 
-已经被用来把 [Pen (pencil.dev)](https://pen.dev) 完整汉化（1800+ 条词典，含 macOS 原生菜单栏），仓库里直接带这份现成词典。
+支持**任意语言**：仓库自带 **12 种语言**的 Pen (pencil.dev) 词典（简中 / 繁中 / 日 / 韩 / 西 / 法 / 德 / 葡 / 俄 / 意 / 越 / 土），含 macOS 原生菜单栏，一条命令热切换。
+
+```bash
+zh-patch lang use ja     # 日本語
+zh-patch lang use es     # Español
+zh-patch lang use zh-TW  # 繁體中文
+```
 
 ```bash
 git clone https://github.com/wh000wh000/zh-patch.git
@@ -15,17 +21,21 @@ zh-patch start                # 带汉化启动 Pen（Ctrl+C 退出；也可 --d
 zh-patch verify               # 看汉化覆盖率，例如 98.8%
 ```
 
-> English: `zh-patch` injects a Chinese localization layer into any Electron app at runtime via the DevTools Protocol (no `app.asar` patching, no code-signature breakage, instantly reversible), and exposes an agent-friendly CLI (`--json` everywhere, `extract` / `todo` / `verify` loop) so an AI agent can localize an app end-to-end. A ready-to-use Pen (pencil.dev) dictionary with 1800+ entries is bundled.
+> English: `zh-patch` injects a runtime localization layer into any Electron app via the DevTools Protocol (no `app.asar` patching, no code-signature breakage, instantly reversible, hot language switching), and exposes an agent-friendly CLI (`--json` everywhere, `extract` / `todo` / `verify` loop) so an AI agent can localize an app end-to-end. Bundled: Pen (pencil.dev) dictionaries in **12 languages** (zh-CN, zh-TW, ja, ko, es, fr, de, pt-BR, ru, it, vi, tr), ~1850 entries each.
 
 ---
 
-## 效果（Pen 实测）
+## 效果（同一个 App，同一个补丁）
 
-| 主页 | 编辑器 / 智能体面板 |
+| 简体中文 zh-CN | 日本語 ja |
 |---|---|
-| ![dashboard](docs/images/pen-dashboard.jpg) | ![editor](docs/images/pen-editor.jpg) |
+| ![zh-CN](docs/images/lang-zh-CN.jpg) | ![ja](docs/images/lang-ja.jpg) |
 
-界面文案、输入框占位符、动态计时（`思考了 44s`）、错误提示（`pen.dev 无法读取你的文档。`）都是中文；模型名、模板名等内容保持英文。
+| Español es | 繁體中文 zh-TW |
+|---|---|
+| ![es](docs/images/lang-es.jpg) | ![zh-TW](docs/images/lang-zh-TW.jpg) |
+
+界面文案、输入框占位符、动态计时（`思考了 44s` / `3分前`）、错误提示都跟着语言走；模型名、模板名等内容保持原样。切换语言**不需要重启 App、也不需要刷新窗口**。
 
 ## 为什么不用「改 app.asar」那套
 
@@ -59,12 +69,14 @@ zh-patch start
 | `start [--daemon] [--restart]` | 带汉化启动（默认前台守护，`--daemon` 后台） |
 | `apply` | 对已开启调试端口的 App 做一次性注入 |
 | `status` | App、端口、注入状态、覆盖率 |
+| `lang list\|use <代码>` | **多语言包**：列出 / 热切换目标语言 |
 | `extract` | 抓取当前界面所有可见 UI 字符串 |
 | `todo` | **列出未收录的可见文案**（Agent 的工作清单） |
 | `verify --min 90` | **输出覆盖率**，低于阈值退出码 1 |
 | `menu [--read]` | 汉化原生菜单 / 读取当前菜单树 |
 | `dict stats\|add\|merge\|check` | 词典维护 |
-| `brand --enable --url https://你的站点` | 开启**汉化署名角标**（默认关闭，明确标注来源） |
+| `brand --enable --url https://你的站点` | 开启**署名角标**（默认关闭，明确标注来源） |
+| `link [--url X]` | 展示并用默认浏览器打开品牌站点 |
 | `install-launcher` | 生成双击启动脚本 |
 | `manifest --json` | 机器可读的命令与契约清单 |
 | `stop [--restart]` | 停止注入；`--restart` 恢复原版启动 |
@@ -90,6 +102,7 @@ zh-patch stop --restart                 # 8. 收尾
 
 | 区域 | 状态 |
 |---|---|
+| 12 种语言（zh-CN 人工校对，其余 AI 初翻待母语者复核）| ✅ |
 | 主页 / 编辑器工具栏 / 属性面板 / 智能体面板 / 模型选择器 | ✅ |
 | 输入框占位符（含 tiptap/ProseMirror 的伪元素占位符） | ✅ |
 | 动态文案（`Thought for 44s` → `思考了 44s`） | ✅ |
@@ -132,7 +145,19 @@ zh-patch brand show             # 看当前设置
 - 调试端口只监听 `127.0.0.1`，但本机其他程序可以连；不要在不可信环境长期挂着。
 - 注入层只做文本替换，不 hook API、不拦截网络、不改持久化数据。
 
-## 给别的 App 做汉化
+## 多语言
+
+```bash
+zh-patch lang                 # 列出 12 种语言与安装状态
+zh-patch lang use ja          # 热切换到日语（词典自动就位，2.5 秒内生效）
+zh-patch start --lang de      # 临时用德语启动，不改配置
+```
+
+完整语言表、新增语言的流程见 [docs/LANGUAGES.md](docs/LANGUAGES.md)。
+
+> 除简体中文外，其余语言为 **AI 初翻**（多 Agent 按统一术语表产出，key 逐字节校验）。可用，但欢迎母语者提 PR 校对。
+
+## 给别的 App 做本地化
 
 ```bash
 zh-patch init --app "/Applications/YourApp.app"

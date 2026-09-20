@@ -6,11 +6,26 @@ import {
   pidAlive, readJson, readPid, sleep, warn, writeJson, waitFor,
 } from './util.mjs'
 import {
-  CONFIG_NAME, ROOT, dictPath, findConfigPath, loadConfig, loadDict, saveDict, writeConfigTemplate, resolvePreset,
+  CONFIG_NAME, KNOWN_LANGS, LANG_LABEL, ROOT, availableLangs, dictPath, dictPathForLang,
+  findConfigPath, loadConfig, loadDict, saveDict, writeConfigTemplate, resolvePreset,
 } from './config.mjs'
 import { patchMenu, auditPage, extractStrings, injectTargets, watch, engineVersion } from './injector.mjs'
 import { detectApp, findPids, hasDebugPort, isRunning, launch, quit, forceKill } from './app.mjs'
 import { listTargets, portAlive } from './cdp.mjs'
+
+
+/** 载入配置，并支持用 --lang / --dict 临时覆盖语言包 */
+function cfg(opts = {}, { allowMissing = false } = {}) {
+  const { config } = loadConfig({ configPath: opts.config, allowMissing })
+  if (!config) return null
+  if (opts.lang) {
+    const dp = dictPathForLang(config, String(opts.lang))
+    config.lang = String(opts.lang)
+    config.dict = path.relative(config.__root, dp)
+  }
+  if (opts.dict) config.dict = String(opts.dict)
+  return config
+}
 
 /* ------------------------------------------------------------------ init */
 
@@ -58,7 +73,7 @@ export async function cmdDoctor(args, opts) {
   push('config', !!cfgFound, cfgFound || `未找到 ${CONFIG_NAME}`)
 
   if (cfgFound) {
-    const { config } = loadConfig({})
+    const config = cfg(opts)
     push('app 路径', exists(config.app.path), config.app.path)
     const electronish = detectApp(config.app.path).electron
     push('Electron 应用', electronish, electronish ? 'ok' : '没找到 app.asar（可能不是 Electron）')
@@ -87,7 +102,7 @@ export async function cmdDoctor(args, opts) {
 /* ----------------------------------------------------------------- start */
 
 export async function cmdStart(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const dict = loadDict(config)
 
   if (opts.daemon && !opts.__daemonChild) return startDaemon(config, dict, opts)
@@ -122,10 +137,26 @@ export async function cmdStart(args, opts) {
     if (br.enabled) info(`  汉化署名：${br.text || ''} ${br.link || ''}`.trim())
   }, opts.json)
 
+  // 运行期热重载：词典或配置文件的 mtime 变了就重新载入
+  const stamp = (f) => { try { return fs.statSync(f).mtimeMs } catch { return 0 } }
+  let dictStamp = stamp(dictPath(config))
+  let cfgStamp = stamp(config.__file)
+  const reload = async () => {
+    const d = stamp(dictPath(config)), c = stamp(config.__file)
+    if (d === dictStamp && c === cfgStamp) return null
+    dictStamp = d; cfgStamp = c
+    const fresh = { config: loadConfig({ configPath: config.__file }).config, dict: {} }
+    fresh.dict = loadDict(fresh.config)
+    if (opts.lang) { const dp = dictPathForLang(fresh.config, String(opts.lang)); fresh.config.lang = String(opts.lang); fresh.config.dict = path.relative(fresh.config.__root, dp); fresh.dict = loadDict(fresh.config) }
+    return fresh
+  }
+
   await watch(config, dict, {
+    reload,
     onEvent: (type, payload) => {
       if (opts.quiet || opts.json) return
       if (type === 'inject') info(`  重新注入 ${payload.url || ''}`)
+      else if (type === 'reload') info(`  词典已热重载：${payload.lang || ''} ${payload.entries} 条`)
       else if (type === 'menu') info(`  菜单校准 ${JSON.stringify(payload).slice(0, 120)}`)
       else if (type === 'idle-exit') info('  App 已关闭，守护退出')
     },
@@ -136,6 +167,11 @@ export async function cmdStart(args, opts) {
 function startDaemon(config, dict, opts) {
   ensureStateDir()
   const args = [path.join(ROOT, 'bin', 'zh-patch.mjs'), 'start', '--daemon-child']
+  // 把语言/词典/配置覆盖项带给守护子进程，否则它会回落到配置文件里的默认值
+  for (const [flag, val] of [['lang', opts.lang], ['dict', opts.dict], ['config', opts.config]]) {
+    if (val) args.push(`--${flag}`, String(val))
+  }
+  if (opts.quiet) args.push('--quiet')
   const out = fs.openSync(LOG_FILE, 'a')
   const child = spawn(process.execPath, args, { detached: true, stdio: ['ignore', out, out], cwd: process.cwd() })
   child.unref()
@@ -151,7 +187,7 @@ function startDaemon(config, dict, opts) {
 /* ------------------------------------------------------------------ stop */
 
 export async function cmdStop(args, opts) {
-  const { config } = loadConfig({ allowMissing: true })
+  const config = cfg(opts, { allowMissing: true })
   let killed = false
   const pid = readPid()
   if (pid && pidAlive(pid)) { try { process.kill(pid, 'SIGTERM'); killed = true } catch {} }
@@ -175,7 +211,7 @@ export async function cmdStop(args, opts) {
 /* ---------------------------------------------------------------- status */
 
 export async function cmdStatus(args, opts) {
-  const { config } = loadConfig({ allowMissing: true })
+  const config = cfg(opts, { allowMissing: true })
   if (!config) return output({ config: false }, () => warn(`当前目录没有 ${CONFIG_NAME}`), opts.json)
   const dict = loadDict(config)
   const running = isRunning(config)
@@ -220,7 +256,7 @@ export async function cmdStatus(args, opts) {
 /* --------------------------------------------------------------- extract */
 
 export async function cmdExtract(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   if (!(await portAlive(config.debug.pagePort))) { fail('页面调试端口不可用。先用 zh-patch start（或 apply）打开 App。'); process.exit(4) }
   const res = await extractStrings(config, { match: opts.match })
   if (res.error) { fail(`抓取失败：${res.error}`); process.exit(4) }
@@ -237,7 +273,7 @@ export async function cmdExtract(args, opts) {
 /* ------------------------------------------------------------------ todo */
 
 export async function cmdTodo(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const dict = loadDict(config)
   const res = await auditPage(config, { match: opts.match })
   if (res.error) {
@@ -267,7 +303,7 @@ export async function cmdTodo(args, opts) {
 /* ---------------------------------------------------------------- verify */
 
 export async function cmdVerify(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const res = await auditPage(config, { match: opts.match })
   if (res.error) { fail(`无法审计：${res.error}（App 需要以 zh-patch start 启动并已注入）`); process.exit(4) }
   // 覆盖率 = 本屏翻译过的「去重原文」数 / (它 + 仍未收录的)
@@ -292,7 +328,7 @@ export async function cmdVerify(args, opts) {
 /* ------------------------------------------------------------------ menu */
 
 export async function cmdMenu(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const dict = loadDict(config)
   if (opts.read) {
     const { listTargets: lt, withTarget } = await import('./cdp.mjs')
@@ -315,7 +351,7 @@ export async function cmdMenu(args, opts) {
 
 export async function cmdDict(args, opts) {
   const sub = args[0]
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const dict = loadDict(config)
   const file = dictPath(config)
 
@@ -362,7 +398,7 @@ export async function cmdDict(args, opts) {
 /* ------------------------------------------------------------ launcher */
 
 export async function cmdInstallLauncher(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const dir = path.resolve(opts.dir || config.__root)
   const isWin = process.platform === 'win32'
   const shim = path.join(dir, isWin ? '启动汉化.bat' : '启动汉化.command')
@@ -388,7 +424,7 @@ export async function cmdInstallLauncher(args, opts) {
  * 不会伪装成宿主 App 自带的界面元素。用户可点 × 永久隐藏。
  */
 export async function cmdBrand(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const b = { ...(config.branding || {}) }
   const sub = args[0]
   const hasFlags = ['enable', 'disable', 'text', 'url', 'corner', 'opacity', 'dismissible']
@@ -428,6 +464,78 @@ export async function cmdBrand(args, opts) {
   }, opts.json)
 }
 
+
+/* ------------------------------------------------------------------ lang */
+
+export async function cmdLang(args, opts) {
+  const config = cfg(opts)
+  const sub = args[0]
+  const rows = availableLangs(config)
+  const bundled = fs.existsSync(path.join(ROOT, 'dict'))
+    ? fs.readdirSync(path.join(ROOT, 'dict')).filter(f => /\.(zh-CN|zh-TW|ja|ko|es|fr|de|pt-BR|ru|it|vi|tr)\.json$/.test(f))
+    : []
+
+  if (sub === 'use') {
+    const code = args[1]
+    if (!code) { fail('用法：zh-patch lang use <语言代码>（如 ja / zh-TW / es）'); process.exit(2) }
+    const dp = dictPathForLang(config, code)
+    const raw = readJson(config.__file) || {}
+    raw.lang = code
+    raw.dict = path.relative(config.__root, dp)
+    writeJson(config.__file, raw)
+    const entries = exists(dp) ? Object.keys(readJson(dp, {})).length : 0
+    if (!entries) {
+      const src = path.join(ROOT, 'dict', path.basename(dp))
+      if (exists(src)) { fs.mkdirSync(path.dirname(dp), { recursive: true }); fs.copyFileSync(src, dp) }
+    }
+    const n = exists(dp) ? Object.keys(readJson(dp, {})).length : 0
+    const injected = n ? await injectTargets(config, loadDict(config)) : []
+    return output({ lang: code, dict: dp, entries: n, injected: injected.map(i => i.result || i.error) },
+      () => {
+        n ? ok(`已切换到 ${LANG_LABEL[code] || code}：${path.relative(process.cwd(), dp)}（${n} 条）`)
+          : warn(`已切换语言为 ${code}，但还没有对应词典：${path.relative(process.cwd(), dp)}`)
+        n ? info('   已热更新到当前窗口') : info('   用 zh-patch extract / todo 开始收集，或从仓库 dict/ 目录拷一份现成的')
+      }, opts.json)
+  }
+
+  return output({ current: config.lang, dict: dictPath(config), langs: rows, bundled }, () => {
+    head('语言包')
+    for (const r of rows) {
+      const mark = r.code === config.lang ? `${C.green}●${C.reset}` : (r.exists ? '○' : `${C.dim}·${C.reset}`)
+      log(`  ${mark} ${r.code.padEnd(7)} ${r.label.padEnd(18)} ${r.exists ? `${Object.keys(readJson(r.dict, {})).length} 条` : `${C.dim}未安装${C.reset}`}`)
+    }
+    log('')
+    info('切换：zh-patch lang use ja     临时覆盖：zh-patch start --lang es')
+  }, opts.json)
+}
+
+/* ------------------------------------------------------------------ link */
+
+/** 站点嵌入：在终端里展示并可一键用默认浏览器打开品牌站点 */
+export async function cmdLink(args, opts) {
+  const config = cfg(opts, { allowMissing: true })
+  const url = opts.url || config?.branding?.link || 'https://www.cc8.cc'
+  const text = config?.branding?.text || ''
+  let opened = false
+  if (opts.open !== false) {
+    try {
+      const { execFileSync } = await import('node:child_process')
+      if (process.platform === 'darwin') execFileSync('open', [url])
+      else if (process.platform === 'win32') execFileSync('cmd', ['/c', 'start', '', url])
+      else execFileSync('xdg-open', [url])
+      opened = true
+    } catch {}
+  }
+  return output({ url, text, opened, badgeEnabled: !!config?.branding?.enabled }, () => {
+    head('汉化补丁 · 关于')
+    log(`  ${text || '本项目提供的汉化/多语言补丁'}`)
+    log(`  站点  ${C.cyan}${url}${C.reset}`)
+    if (config) log(`  署名角标 ${config.branding?.enabled ? '已开启' : '未开启（zh-patch brand --enable 打开）'}`)
+    log('')
+    info(opened ? '已在浏览器打开' : '未能自动打开，请手动访问上面的地址')
+  }, opts.json)
+}
+
 /* -------------------------------------------------------------- manifest */
 
 export const COMMANDS = {
@@ -443,13 +551,15 @@ export const COMMANDS = {
   menu: { usage: 'menu [--read]', desc: '汉化原生菜单 / 读取当前菜单树', json: true },
   dict: { usage: 'dict <stats|add|merge|check> [args]', desc: '词典维护', json: true },
   brand: { usage: 'brand [--enable|--disable] [--text X] [--url Y] [--corner 位置]', desc: '汉化署名角标（默认关闭，明确标注来源）', json: true },
+  lang: { usage: 'lang <list|use 语言代码>', desc: '多语言包：列出 / 切换目标语言', json: true },
+  link: { usage: 'link [--url X] [--open false]', desc: '展示并用默认浏览器打开品牌站点', json: true },
   'install-launcher': { usage: 'install-launcher [--dir .]', desc: '生成双击启动脚本', json: true },
   preset: { usage: 'preset <list|use 名字> [--dir .]', desc: '查看/套用内置预设（如 pen）', json: true },
   manifest: { usage: 'manifest', desc: '输出机器可读的命令清单（给 Agent 用）', json: true },
 }
 
 export async function cmdApply(args, opts) {
-  const { config } = loadConfig({})
+  const config = cfg(opts)
   const dict = loadDict(config)
   if (!(await portAlive(config.debug.pagePort))) { fail('页面调试端口不可用。用 zh-patch start 启动 App，或先 apply 前手动带 --remote-debugging-port 启动。'); process.exit(4) }
   const injected = await injectTargets(config, dict)
@@ -474,19 +584,26 @@ export async function cmdPreset(args, opts) {
     if (!name || !list.includes(name)) { fail(`没有预设 ${name}（可用：${list.join(', ')}）`); process.exit(2) }
     const preset = resolvePreset(name)
     const dir = path.resolve(opts.dir || process.cwd())
-    const dictRel = `dict/${name}.zh.json`
+    const lang = opts.lang || preset.lang || 'zh-CN'
+    const dictRel = `dict/${preset.dict || `${name}.${lang}.json`}`
     fs.mkdirSync(path.join(dir, 'dict'), { recursive: true })
-    const dictSrc = path.join(ROOT, 'dict', preset.dict || `${name}.zh.json`)
+    const dictSrc = path.join(ROOT, 'dict', preset.dict || `${name}.${lang}.json`)
     const dictDst = path.join(dir, dictRel)
     let entries = 0
     if (exists(dictSrc)) { fs.copyFileSync(dictSrc, dictDst); entries = Object.keys(readJson(dictDst, {})).length }
-    const cfg = writeConfigTemplate(path.join(dir, CONFIG_NAME), {
+    const target = path.join(dir, CONFIG_NAME)
+    const previous = readJson(target)        // 写模板前先留一份旧的，用于保留用户自定义
+    const cfg = writeConfigTemplate(target, {
       name: preset.name, appPath: preset.app.path, processPattern: preset.app.processPattern,
       dictRel, pagePort: preset.debug.pagePort, inspectPort: preset.debug.inspectPort,
     })
     if (preset.engine) cfg.engine = { ...cfg.engine, ...preset.engine }
     if (preset.menu) cfg.menu = { ...cfg.menu, ...preset.menu }
-    writeJson(path.join(dir, CONFIG_NAME), cfg)
+    cfg.lang = lang
+    // 别把用户已有的署名/品牌配置冲掉：preset 只提供默认值
+    if (previous && previous.branding) cfg.branding = previous.branding
+    if (previous && previous.engine && previous.engine.rules) cfg.engine.rules = previous.engine.rules
+    writeJson(target, cfg)
     return output({ preset: name, config: path.join(dir, CONFIG_NAME), dict: dictDst, entries }, () => {
       ok(`已套用预设 ${name}：配置 + ${entries} 条词典`)
       info(`   注意：预设里的 App 路径是 ${preset.app.path}，若你的安装位置不同请改配置。`)
@@ -500,7 +617,8 @@ export function cmdManifest(args, opts) {
   const manifest = {
     name: 'zh-patch',
     version: JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version,
-    purpose: '为 Electron 应用注入运行时中文汉化层（不改 App 本体），并提供 Agent 可驱动的抽取/补齐/验收闭环',
+    purpose: '为 Electron 应用注入运行时的多语言本地化层（不改 App 本体），并提供 Agent 可驱动的抽取/补齐/验收闭环',
+    languages: KNOWN_LANGS.map(([code, label]) => ({ code, label })),
     config: { file: CONFIG_NAME, generatedBy: 'zh-patch init', schema: 'schema/zh-patch.config.schema.json' },
     commands: Object.entries(COMMANDS).map(([name, c]) => ({ name, ...c })),
     agentWorkflow: [
