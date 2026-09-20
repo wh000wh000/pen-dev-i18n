@@ -502,7 +502,7 @@ export async function cmdLang(args, opts) {
     head('语言包')
     for (const r of rows) {
       const mark = r.code === config.lang ? `${C.green}●${C.reset}` : (r.exists ? '○' : `${C.dim}·${C.reset}`)
-      log(`  ${mark} ${r.code.padEnd(7)} ${r.label.padEnd(18)} ${r.exists ? `${Object.keys(readJson(r.dict, {})).length} 条` : `${C.dim}未安装${C.reset}`}`)
+      log(`  ${mark} ${r.code.padEnd(7)} ${r.label.padEnd(18)} ${r.exists ? `${Object.keys(readJson(r.dict, {})).length} 条` : `${C.dim}未就位（首次 use 会自动从仓库 dict/ 拷入）${C.reset}`}`)
     }
     log('')
     info('切换：zh-patch lang use ja     临时覆盖：zh-patch start --lang es')
