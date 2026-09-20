@@ -1,0 +1,17 @@
+{
+  "name": "zh-patch",
+  "version": "0.1.0",
+  "description": "Electron 应用运行时汉化补丁：不改 App 本体、可一键撤回，并对 AI Agent 友好（含 Pen/pencil.dev 现成词典）",
+  "type": "module",
+  "bin": { "zh-patch": "bin/zh-patch.mjs" },
+  "files": ["bin", "src", "presets", "dict", "schema", "docs", "README.md", "AGENTS.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node bin/zh-patch.mjs start",
+    "doctor": "node bin/zh-patch.mjs doctor",
+    "test": "node bin/zh-patch.mjs manifest --json > /dev/null && node bin/zh-patch.mjs help > /dev/null && echo tests-ok"
+  },
+  "keywords": ["electron", "localization", "i18n", "chinese", "zh-CN", "patch", "cdp", "agent", "pen", "pencil"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/wh000wh000/zh-patch.git" }
+}

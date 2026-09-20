@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "zh-patch 配置",
+  "type": "object",
+  "required": ["app", "dict"],
+  "properties": {
+    "app": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "name": { "type": "string", "description": "显示名，macOS 上用于 osascript 退出" },
+        "path": { "type": "string", "description": "macOS: .app 路径；Windows: .exe；Linux: 可执行文件" },
+        "processPattern": { "type": "string", "description": "pgrep 用的进程匹配串" },
+        "launchArgs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "debug": {
+      "type": "object",
+      "properties": {
+        "pagePort": { "type": "integer", "default": 9333, "description": "渲染进程调试端口" },
+        "inspectPort": { "type": "integer", "default": 9229, "description": "主进程 Node inspector 端口（用于汉化原生菜单，可设 0 关闭）" }
+      }
+    },
+    "dict": { "type": "string", "description": "相对配置文件的词典路径" },
+    "engine": {
+      "type": "object",
+      "properties": {
+        "attrs": { "type": "array", "items": { "type": "string" } },
+        "skipTags": { "type": "array", "items": { "type": "string" } },
+        "skipSelector": { "type": "string" },
+        "pseudoAttrs": { "type": "array", "items": { "type": "string" } },
+        "attrMaxLength": { "type": "integer" },
+        "rules": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } }
+      }
+    },
+    "menu": { "type": "object", "properties": { "enabled": { "type": "boolean" }, "extraKeys": { "type": "array", "items": { "type": "string" } } } },
+    "watch": { "type": "object", "properties": { "intervalMs": { "type": "integer" }, "menuIntervalMs": { "type": "integer" }, "exitAfterIdleMs": { "type": "integer" } } }
+  }
+}
