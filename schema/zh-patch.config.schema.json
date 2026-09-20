@@ -2,38 +2,160 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "zh-patch 配置",
   "type": "object",
-  "required": ["app", "dict"],
+  "required": [
+    "app",
+    "dict"
+  ],
   "properties": {
     "app": {
       "type": "object",
-      "required": ["path"],
+      "required": [
+        "path"
+      ],
       "properties": {
-        "name": { "type": "string", "description": "显示名，macOS 上用于 osascript 退出" },
-        "path": { "type": "string", "description": "macOS: .app 路径；Windows: .exe；Linux: 可执行文件" },
-        "processPattern": { "type": "string", "description": "pgrep 用的进程匹配串" },
-        "launchArgs": { "type": "array", "items": { "type": "string" } }
+        "name": {
+          "type": "string",
+          "description": "显示名，macOS 上用于 osascript 退出"
+        },
+        "path": {
+          "type": "string",
+          "description": "macOS: .app 路径；Windows: .exe；Linux: 可执行文件"
+        },
+        "processPattern": {
+          "type": "string",
+          "description": "pgrep 用的进程匹配串"
+        },
+        "launchArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "debug": {
       "type": "object",
       "properties": {
-        "pagePort": { "type": "integer", "default": 9333, "description": "渲染进程调试端口" },
-        "inspectPort": { "type": "integer", "default": 9229, "description": "主进程 Node inspector 端口（用于汉化原生菜单，可设 0 关闭）" }
+        "pagePort": {
+          "type": "integer",
+          "default": 9333,
+          "description": "渲染进程调试端口"
+        },
+        "inspectPort": {
+          "type": "integer",
+          "default": 9229,
+          "description": "主进程 Node inspector 端口（用于汉化原生菜单，可设 0 关闭）"
+        }
       }
     },
-    "dict": { "type": "string", "description": "相对配置文件的词典路径" },
+    "dict": {
+      "type": "string",
+      "description": "相对配置文件的词典路径"
+    },
     "engine": {
       "type": "object",
       "properties": {
-        "attrs": { "type": "array", "items": { "type": "string" } },
-        "skipTags": { "type": "array", "items": { "type": "string" } },
-        "skipSelector": { "type": "string" },
-        "pseudoAttrs": { "type": "array", "items": { "type": "string" } },
-        "attrMaxLength": { "type": "integer" },
-        "rules": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } }
+        "attrs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipTags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skipSelector": {
+          "type": "string"
+        },
+        "pseudoAttrs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attrMaxLength": {
+          "type": "integer"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       }
     },
-    "menu": { "type": "object", "properties": { "enabled": { "type": "boolean" }, "extraKeys": { "type": "array", "items": { "type": "string" } } } },
-    "watch": { "type": "object", "properties": { "intervalMs": { "type": "integer" }, "menuIntervalMs": { "type": "integer" }, "exitAfterIdleMs": { "type": "integer" } } }
+    "menu": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "extraKeys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "watch": {
+      "type": "object",
+      "properties": {
+        "intervalMs": {
+          "type": "integer"
+        },
+        "menuIntervalMs": {
+          "type": "integer"
+        },
+        "exitAfterIdleMs": {
+          "type": "integer"
+        }
+      }
+    },
+    "branding": {
+      "type": "object",
+      "description": "汉化署名角标。默认关闭；开启后窗口角落出现一条明确标注来源的小标签（是 zh-patch 的署名，不是宿主 App 的界面元素）。",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "text": {
+          "type": "string",
+          "description": "角标文案，例如「中文汉化：xxx」"
+        },
+        "link": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "可选链接（会显示域名部分）"
+        },
+        "corner": {
+          "type": "string",
+          "enum": [
+            "bottom-center",
+            "bottom-left",
+            "bottom-right",
+            "top-right"
+          ],
+          "default": "bottom-center"
+        },
+        "opacity": {
+          "type": "number",
+          "description": "默认 0.5，鼠标悬停变 1"
+        },
+        "dismissible": {
+          "type": "boolean",
+          "description": "是否允许用户点 × 永久隐藏（写入 localStorage）"
+        }
+      }
+    }
   }
 }

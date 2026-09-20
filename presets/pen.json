@@ -1,14 +1,45 @@
 {
   "name": "Pen",
-  "app": { "path": "/Applications/Pen.app", "processPattern": "/Applications/Pen.app/Contents/MacOS/Pen" },
-  "debug": { "pagePort": 9333, "inspectPort": 9229 },
+  "app": {
+    "path": "/Applications/Pen.app",
+    "processPattern": "/Applications/Pen.app/Contents/MacOS/Pen"
+  },
+  "debug": {
+    "pagePort": 9333,
+    "inspectPort": 9229
+  },
   "dict": "pen.zh.json",
   "engine": {
-    "attrs": ["placeholder", "title", "aria-label", "alt", "data-placeholder"],
-    "skipTags": ["SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "CODE", "PRE"],
+    "attrs": [
+      "placeholder",
+      "title",
+      "aria-label",
+      "alt",
+      "data-placeholder"
+    ],
+    "skipTags": [
+      "SCRIPT",
+      "STYLE",
+      "NOSCRIPT",
+      "TEXTAREA",
+      "CODE",
+      "PRE"
+    ],
     "skipSelector": "[contenteditable=\"true\"],[data-zh-patch-skip]",
-    "pseudoAttrs": ["data-placeholder"],
+    "pseudoAttrs": [
+      "data-placeholder"
+    ],
     "attrMaxLength": 160
   },
-  "menu": { "enabled": true }
+  "menu": {
+    "enabled": true
+  },
+  "branding": {
+    "enabled": false,
+    "text": "中文汉化：zh-patch",
+    "link": null,
+    "corner": "bottom-center",
+    "opacity": 0.5,
+    "dismissible": true
+  }
 }

@@ -64,6 +64,7 @@ zh-patch start
 | `verify --min 90` | **输出覆盖率**，低于阈值退出码 1 |
 | `menu [--read]` | 汉化原生菜单 / 读取当前菜单树 |
 | `dict stats\|add\|merge\|check` | 词典维护 |
+| `brand --enable --url https://你的站点` | 开启**汉化署名角标**（默认关闭，明确标注来源） |
 | `install-launcher` | 生成双击启动脚本 |
 | `manifest --json` | 机器可读的命令与契约清单 |
 | `stop [--restart]` | 停止注入；`--restart` 恢复原版启动 |
@@ -96,6 +97,35 @@ zh-patch stop --restart                 # 8. 收尾
 | 右键菜单 / 系统文件对话框 | ⚠️ 由系统或构建期决定，部分或无法覆盖 |
 | 画在 canvas 里的文字、智能体回复正文、用户输入 | ❌ 有意不动 |
 
+## 汉化署名（attribution）
+
+免费工具留个署名是常规做法，本项目的做法是**明确标注来源**、默认关闭、用户可点 × 永久隐藏：
+
+```bash
+zh-patch brand --enable --url https://example.com --text "中文汉化：example.com"
+zh-patch brand --disable        # 关掉
+zh-patch brand show             # 看当前设置
+```
+
+或者直接写进 `zh-patch.config.json`：
+
+```json
+{
+  "branding": {
+    "enabled": true,
+    "text": "中文汉化：example.com",
+    "link": "https://example.com",
+    "corner": "bottom-center",
+    "opacity": 0.5,
+    "dismissible": true
+  }
+}
+```
+
+角标渲染在窗口角落（默认底部居中），半透明、悬停变亮、不遮挡操作。它会同时出现在 `zh-patch status` / `start` 的输出里。
+
+> 注意：角标写的是「汉化由谁提供」，**不会伪装成宿主 App 自带的界面元素**。请不要把它改成未经标注的商业广告 —— 那会误导用户、冒用第三方产品背书，也容易让项目被投诉下架。
+
 ## 已知边界
 
 - 目标 App 必须**由 zh-patch 启动**（要开调试端口）。直接点 Dock 图标启动的是原版。
@@ -120,6 +150,11 @@ zh-patch install-launcher       # 给普通用户一个双击入口
 - 新增一份 App 词典：放 `dict/`，再提交一个 `presets/<app>.json` 与 PR。
 - 报告某条没翻到：贴 `zh-patch todo --json` 的输出。
 - 翻译规范见 [docs/TRANSLATING.md](docs/TRANSLATING.md)。
+
+## 关于
+
+- 项目维护：[cc8.cc](https://www.cc8.cc)
+- 内置 Pen 词典是实际使用中逐条攒出来的（1880 条），欢迎补漏。
 
 ## License
 
