@@ -2,7 +2,7 @@
 import { C, fail, info, log } from '../src/util.mjs'
 import {
   cmdApply, cmdDict, cmdDoctor, cmdExtract, cmdInit, cmdInstallLauncher, cmdManifest,
-  cmdMenu, cmdPreset, cmdStart, cmdStatus, cmdStop, cmdTodo, cmdVerify, COMMANDS,
+  cmdBrand, cmdMenu, cmdPreset, cmdStart, cmdStatus, cmdStop, cmdTodo, cmdVerify, COMMANDS,
 } from '../src/commands.mjs'
 
 const argv = process.argv.slice(2)
@@ -32,7 +32,7 @@ const cmd = args.shift() || (opts.help || opts.h ? 'help' : 'help')
 const table = {
   init: cmdInit, doctor: cmdDoctor, start: cmdStart, run: cmdStart, apply: cmdApply,
   stop: cmdStop, status: cmdStatus, extract: cmdExtract, todo: cmdTodo, verify: cmdVerify,
-  menu: cmdMenu, dict: cmdDict, 'install-launcher': cmdInstallLauncher, preset: cmdPreset,
+  menu: cmdMenu, dict: cmdDict, brand: cmdBrand, 'install-launcher': cmdInstallLauncher, preset: cmdPreset,
   manifest: cmdManifest,
 }
 

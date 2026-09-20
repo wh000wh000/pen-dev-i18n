@@ -118,6 +118,8 @@ export async function cmdStart(args, opts) {
     ok('汉化已启用（守护中，Ctrl+C 退出）')
     for (const f of first) info(`   ${f.result?.skipped ? '已是最新' : '已注入'} ${f.url || ''}`)
     info(`  原生菜单：${JSON.stringify(menu)}`)
+    const br = config.branding || {}
+    if (br.enabled) info(`  汉化署名：${br.text || ''} ${br.link || ''}`.trim())
   }, opts.json)
 
   await watch(config, dict, {
@@ -210,6 +212,8 @@ export async function cmdStatus(args, opts) {
     log(`  词典        ${Object.keys(dict).length} 条  ${C.dim}${path.relative(process.cwd(), dictPath(config))}${C.reset}`)
     if (audit && !audit.error) log(`  可见文案    已翻译 ${audit.translated} 条，未收录 ${audit.unknown.length} 条`)
     log(`  守护        ${pid && pidAlive(pid) ? `pid ${pid}` : '未运行'}`)
+    const br = config.branding || {}
+    log(`  汉化署名    ${br.enabled ? `${br.text || ''} ${br.link || ''}`.trim() : `${C.dim}关闭${C.reset}`}`)
   }, opts.json)
 }
 
@@ -375,6 +379,55 @@ export async function cmdInstallLauncher(args, opts) {
   }, opts.json)
 }
 
+
+/* ----------------------------------------------------------------- brand */
+
+/**
+ * 汉化署名（attribution）：默认关闭。
+ * 开启后窗口角落会出现一条小标签 —— 明确写着这是 zh-patch 的署名，
+ * 不会伪装成宿主 App 自带的界面元素。用户可点 × 永久隐藏。
+ */
+export async function cmdBrand(args, opts) {
+  const { config } = loadConfig({})
+  const b = { ...(config.branding || {}) }
+  const sub = args[0]
+  const hasFlags = ['enable', 'disable', 'text', 'url', 'corner', 'opacity', 'dismissible']
+    .some(k => opts[k] !== undefined)
+
+  if (sub === 'show' || (!sub && !hasFlags)) {
+    return output({ branding: b, config: config.__file }, () => {
+      head('汉化署名')
+      log(`  状态    ${b.enabled ? `${C.green}开启${C.reset}` : `${C.dim}关闭${C.reset}`}`)
+      log(`  文案    ${b.text || '（未设置）'}`)
+      log(`  链接    ${b.link || '（未设置）'}`)
+      log(`  位置    ${b.corner || 'bottom-center'}   透明度 ${b.opacity ?? 0.5}`)
+      log('')
+      info('用法：zh-patch brand --enable --url https://example.com --text "中文汉化：xxx"')
+      info('      zh-patch brand --disable')
+    }, opts.json)
+  }
+
+  if (b.enabled === undefined) b.enabled = false
+  if (opts.enable) b.enabled = true
+  if (opts.disable) b.enabled = false
+  if (opts.text) b.text = String(opts.text)
+  if (opts.url) b.link = String(opts.url)
+  if (opts.corner) b.corner = String(opts.corner)
+  if (opts.opacity !== undefined) b.opacity = Number(opts.opacity)
+  if (opts.dismissible === 'false') b.dismissible = false
+  if (opts.dismissible === 'true') b.dismissible = true
+
+  const raw = (await import('./util.mjs')).readJson(config.__file) || {}
+  raw.branding = b
+  writeJson(config.__file, { ...raw })
+  const dict = loadDict(config)
+  const injected = await injectTargets(config, dict)
+  return output({ branding: b, injected: injected.map(i => i.result || i.error) }, () => {
+    ok(`署名已${b.enabled ? '开启' : '关闭'}：${b.text || ''} ${b.link || ''}`.trim())
+    info('   已热更新到当前窗口（若没变化，刷新一次窗口即可）')
+  }, opts.json)
+}
+
 /* -------------------------------------------------------------- manifest */
 
 export const COMMANDS = {
@@ -389,6 +442,7 @@ export const COMMANDS = {
   verify: { usage: 'verify [--min 90] [--match 路由]', desc: '输出汉化覆盖率，低于阈值退出码 1', json: true },
   menu: { usage: 'menu [--read]', desc: '汉化原生菜单 / 读取当前菜单树', json: true },
   dict: { usage: 'dict <stats|add|merge|check> [args]', desc: '词典维护', json: true },
+  brand: { usage: 'brand [--enable|--disable] [--text X] [--url Y] [--corner 位置]', desc: '汉化署名角标（默认关闭，明确标注来源）', json: true },
   'install-launcher': { usage: 'install-launcher [--dir .]', desc: '生成双击启动脚本', json: true },
   preset: { usage: 'preset <list|use 名字> [--dir .]', desc: '查看/套用内置预设（如 pen）', json: true },
   manifest: { usage: 'manifest', desc: '输出机器可读的命令清单（给 Agent 用）', json: true },
