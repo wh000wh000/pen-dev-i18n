@@ -1,0 +1,10 @@
+node_modules/
+zh-patch.config.json
+dict/*.local.json
+strings.json
+todo.json
+translation.json
+启动汉化.command
+启动汉化.bat
+.DS_Store
+*.log
