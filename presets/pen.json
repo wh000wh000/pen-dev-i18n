@@ -8,7 +8,7 @@
     "pagePort": 9333,
     "inspectPort": 9229
   },
-  "dict": "pen.zh.json",
+  "dict": "pen.zh-CN.json",
   "engine": {
     "attrs": [
       "placeholder",
@@ -41,5 +41,6 @@
     "corner": "bottom-center",
     "opacity": 0.5,
     "dismissible": true
-  }
+  },
+  "lang": "zh-CN"
 }

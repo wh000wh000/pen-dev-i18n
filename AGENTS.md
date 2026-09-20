@@ -35,6 +35,35 @@ $N stop --restart --json              # 收尾（恢复原版启动）；只想�
 
 如果 `verify` 不达标：把返回里的 `sample` 或重新 `todo` 得到的清单继续翻译，回到第 5 步。典型收敛 2～4 轮。
 
+## 1.5 多语言（不是只能中文）
+
+仓库自带 12 种语言的 Pen 词典（`dict/pen.<lang>.json`），切换是一等公民：
+
+```bash
+$N lang                       # 列出语言与安装状态（--json 可解析）
+$N lang use ja                # 热切换：词典自动就位，2.5s 内界面变日语，无需刷新
+$N start --lang de --daemon   # 临时指定语言（优先级高于配置文件）
+$N verify --lang ru --json    # 用指定语言做覆盖率验收
+```
+
+要点：
+- **词典的 key 永远是英文原文**，译文才是目标语言 —— 给新语言做词典时，基准是英文 key，不要拿中文词典当输入。
+- 显式 `--lang` 会**固定**该守护进程的语言，配置文件里的改动不会生效；要让 `lang use` 生效就别带 `--lang` 启动。
+- 语言切换时引擎会先把已翻译节点**还原成原文**再按新词典重译；`--json` 里 `reload` 事件会报告 `{lang, entries}`。
+
+### 新增一种语言（Agent 流程）
+
+```bash
+cp dict/pen.zh-CN.json /tmp/src.json      # 只为拿 key 集合；译文不要抄
+python3 -c "import json;print(json.dumps(list(json.load(open('/tmp/src.json')).keys()),ensure_ascii=False))" > keys.json
+# 把 keys.json 切成 N 片，让 N 个 agent 并行翻译成 {"English": "<目标语言>"} 的 JSON
+$N lang use <code>            # 先在配置里登记语言（会指向 dict/pen.<code>.json）
+$N dict merge /tmp/out-1.json # 合并各分片
+$N verify --lang <code> --json --min 90
+```
+
+翻译规范见 `docs/TRANSLATING.md`（key 逐字节一致、品牌不译、占位符保留、术语统一）。
+
 ## 2. 翻译时必须遵守
 
 - **key 逐字节复制**，不要「顺手修正」原文里的空格、省略号、大小写。

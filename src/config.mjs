@@ -16,7 +16,9 @@ export const DEFAULT_CONFIG = {
     processPattern: 'MyApp',
   },
   debug: { pagePort: 9333, inspectPort: 9229 },
-  dict: 'dict/myapp.zh.json',
+  // 目标语言（BCP-47 精简写法）。词典路径默认按 dict/<app>.<lang>.json 约定。
+  lang: 'zh-CN',
+  dict: 'dict/myapp.zh-CN.json',
   engine: {
     attrs: ['placeholder', 'title', 'aria-label', 'alt', 'data-placeholder'],
     skipTags: ['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'CODE', 'PRE'],
@@ -76,6 +78,30 @@ export function merge(base, override) {
 
 export function dictPath(config) {
   return path.resolve(config.__root, config.dict)
+}
+
+/** 已知语言包（仓库自带） */
+export const KNOWN_LANGS = [
+  ['zh-CN', '简体中文'], ['zh-TW', '繁體中文'], ['ja', '日本語'], ['ko', '한국어'],
+  ['es', 'Español'], ['fr', 'Français'], ['de', 'Deutsch'], ['pt-BR', 'Português (Brasil)'],
+  ['ru', 'Русский'], ['it', 'Italiano'], ['vi', 'Tiếng Việt'], ['tr', 'Türkçe'],
+]
+export const LANG_LABEL = Object.fromEntries(KNOWN_LANGS)
+
+/** dict/<app>.<lang>.json 约定：把当前词典路径里的语言段换掉 */
+export function dictPathForLang(config, lang) {
+  const cur = config.dict || ''
+  const m = /^(.*?)([A-Za-z]{2}(?:-[A-Za-z]{2,4})?)\.json$/.exec(cur)
+  if (m) return path.resolve(config.__root, `${m[1]}${lang}.json`)
+  const base = cur.replace(/\.json$/, '')
+  return path.resolve(config.__root, `${base}.${lang}.json`)
+}
+
+/** 列出本机可用的语言包（按词典文件是否存在） */
+export function availableLangs(config) {
+  return KNOWN_LANGS.map(([code, label]) => ({
+    code, label, dict: dictPathForLang(config, code), exists: exists(dictPathForLang(config, code)),
+  }))
 }
 
 export function loadDict(config) {
