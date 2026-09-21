@@ -1,175 +1,189 @@
-# Pen 汉化补丁 · pencil.dev 中文 / 多语言本地化（pen-dev-i18n）
+# Pen (pencil.dev) 汉化补丁 · 中文 & 12 语言
 
-[![languages](https://img.shields.io/badge/languages-12-blue)](#多语言)
+> **Pen 没有中文界面？我们把它汉化好了 —— 装上就有。界面、原生菜单栏、输入框提示、报错全部中文，也可以一键切成日本語 / 한국어 / Español 等 12 种语言。**
+
+[![languages](https://img.shields.io/badge/languages-12-blue)](#支持的语言)
+[![platform](https://img.shields.io/badge/platform-macOS-lightgrey)](#安装)
+[![no-patch](https://img.shields.io/badge/%E4%B8%8D%E6%94%B9%E5%AE%89%E8%A3%85%E5%8C%85-%E5%8F%AF%E4%B8%80%E9%94%AE%E6%92%A4%E9%94%80-success)](#%E4%BC%9A%E4%B8%8D%E4%BC%9A%E6%94%B9%E6%88%91%E7%9A%84-pen)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![target](https://img.shields.io/badge/target-Electron%20apps-47848F)](#给别的-app-做本地化)
-[![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](#命令一览)
-[![agent](https://img.shields.io/badge/AI%20Agent-friendly-8A2BE2)](AGENTS.md)
 
-**专为 [Pen (pencil.dev)](https://pen.dev) 做的汉化 + 多语言补丁**：一条命令让 Pen 的界面变成
-**简体中文 / 繁體中文 / 日本語 / 한국어 / Español / Français / Deutsch / Português / Русский / Italiano / Tiếng Việt / Türkçe**（12 种，含 macOS 原生菜单栏）。
+![Pen 中文界面](docs/images/lang-zh-CN.jpg)
 
-**不修改 App 本体** —— 不动 `app.asar`、不破坏代码签名、随时一键撤回，Pen 更新后依然可用；语言可热切换，不用重启。
+## 安装
 
-同一个工具对**任何 Electron 应用**都适用（VS Code、Obsidian、Discord 这类同架构应用），换一份词典即可。
-
-> 如果你在找这些：**pen.dev 汉化**、**pencil.dev 中文**、**Pen 中文界面 / 汉化补丁**、**pen.dev 中文版**、
-> **Electron 应用汉化工具**、**应用多语言本地化**、**AI Agent 自动翻译界面** —— 就是这里。
+**macOS**，需要先装 [Node.js 20+](https://nodejs.org)（`node -v` 能打印版本即可）。
 
 ```bash
 git clone https://github.com/wh000wh000/pen-dev-i18n.git
 cd pen-dev-i18n
-npm link                      # 可选：变成全局 `zh-patch` 命令（不用 npm 就写 node bin/zh-patch.mjs）
-
-mkdir -p ~/pen-zh && cd ~/pen-zh
-zh-patch preset use pen       # 套用 Pen 预设：配置 + 12 种语言词典
-zh-patch start                # 带汉化启动 Pen（Ctrl+C 退出；也可 --daemon 常驻）
-zh-patch lang use ja          # 想换语言？热切换成日语，2 秒生效
-zh-patch verify               # 覆盖率，例如 98.8%
+./install.sh
 ```
 
+脚本会在你的主目录建好 `~/Pen汉化/`（配置 + 12 语言词典 + 双击启动器）。
+
+**以后只要双击 `~/Pen汉化/启动 Pen 汉化.command`** —— 它会带汉化启动 Pen。第一次如果提示「Pen 正在运行」，先按 `Cmd+Q` 退出再双击。
+
 <details>
-<summary>English</summary>
+<summary>手动三步（不想跑脚本的话）</summary>
 
-**Chinese (and 11 more languages) localization patch for Pen / pencil.dev** — plus a general-purpose runtime localization CLI for **any Electron app**.
-
-It injects a translation layer into the app's renderer via the DevTools Protocol (text nodes, attributes and pseudo-element placeholders) and rewrites the native menu labels through the main-process Node inspector. **No `app.asar` patching, no code-signature breakage, instantly reversible**, and it survives app updates.
-
-- 12 bundled Pen dictionaries: `zh-CN, zh-TW, ja, ko, es, fr, de, pt-BR, ru, it, vi, tr` (~1850 entries each)
-- **Hot language switching** — the engine restores original strings, then re-translates; no restart, no reload
-- **Agent-friendly CLI**: `extract → todo → dict merge → verify` loop, `--json` everywhere, documented exit codes ([AGENTS.md](AGENTS.md))
-- Runtime coverage audit: `zh-patch verify --json` reports how much of the visible UI is localized
-
+```bash
+git clone https://github.com/wh000wh000/pen-dev-i18n.git && cd pen-dev-i18n
+mkdir -p ~/Pen汉化 && cd ~/Pen汉化
+node <上面的仓库路径>/bin/zh-patch.mjs preset use pen   # 装好配置与词典
+node <上面的仓库路径>/bin/zh-patch.mjs start            # 启动并汉化（Ctrl+C 退出）
+```
 </details>
 
-## 效果（同一个 App，同一个补丁）
+## 它会变成什么样
 
-| 简体中文 zh-CN | 日本語 ja |
+| 简体中文 | 日本語 |
 |---|---|
 | ![zh-CN](docs/images/lang-zh-CN.jpg) | ![ja](docs/images/lang-ja.jpg) |
 
-| Español es | 繁體中文 zh-TW |
+| Español | 繁體中文 |
 |---|---|
 | ![es](docs/images/lang-es.jpg) | ![zh-TW](docs/images/lang-zh-TW.jpg) |
 
-界面文案、输入框占位符、动态计时（`思考了 44s` / `3分前`）、错误提示都跟着语言走；模型名、模板名等内容保持原样。切换语言**不需要重启 App、也不需要刷新窗口**。
+- **界面文案**：主页、模板卡、编辑器工具栏、属性面板、智能体面板、模型选择器、错误提示 —— 全中文
+- **macOS 菜单栏**：`文件 / 编辑 / 视图 / 窗口 / 帮助`，连「退出 Pen」「隐藏其他」「全选」这些系统项也一起汉化
+- **输入框与悬停提示**：包括编辑器里那类用 CSS 画的占位符
+- **动态文案**：`Thought for 44s` → `思考了 44s`，`Edited 8分钟前` → `编辑于 8分钟前`
 
-## 为什么不用「改 app.asar」那套
+**保持原样的是**：模型名（`Claude Opus 5`、`DeepSeek V4 Flash`）、模板名、字体名，以及你自己的设计和对话内容 —— 这些是内容，不是界面。
 
-| 方案 | 问题 |
-|---|---|
-| 解包/改写 `app.asar` | 破坏 `ElectronAsarIntegrity` 校验与代码签名，App 可能直接起不来；每次更新失效 |
-| 解包成 `Resources/app/` 目录 | 同上，且 `app.asar.unpacked` 路径逻辑会错乱 |
-| 系统级 App 汉化工具 | 只能读不能改，覆盖不全 |
-| **zh-patch（运行时注入）** | 只碰内存里的 DOM 与主进程菜单对象；App 文件一个字节没动，随时撤回，更新后照样能用 |
+## 支持的语言
 
-## 它怎么工作
+| | | | |
+|---|---|---|---|
+| 简体中文 `zh-CN` | 繁體中文 `zh-TW` | 日本語 `ja` | 한국어 `ko` |
+| Español `es` | Français `fr` | Deutsch `de` | Português `pt-BR` |
+| Русский `ru` | Italiano `it` | Tiếng Việt `vi` | Türkçe `tr` |
+
+切换语言（**不用重启 Pen，也不用刷新窗口**，两秒后界面就变）：
+
+```bash
+cd ~/Pen汉化
+node /path/to/pen-dev-i18n/bin/zh-patch.mjs lang use ja    # 日本語
+node /path/to/pen-dev-i18n/bin/zh-patch.mjs lang use zh-CN # 切回中文
+```
+
+> 简体中文是逐条校对的母本；其余 11 种是 AI 初翻，日常使用没问题，**欢迎母语者提 PR 修正**。
+
+## 常见问题
+
+<details>
+<summary><b>会不会改我的 Pen？</b></summary>
+
+不会。补丁**不修改 Pen 的任何文件**（不动 `app.asar`、不改代码签名），只是在 Pen 运行时替换它界面里的文字。关掉之后 Pen 和原版一模一样 —— 这也是它和「汉化版安装包」最大的区别：你不会因为装了汉化而失去官方更新。
+</details>
+
+<details>
+<summary><b>Pen 更新到新版本后还有效吗？</b></summary>
+
+有效。因为没改安装包，更新不会被破坏。新版本里新增的英文文案若还没被覆盖，用下面「反馈」的方法告诉我们即可。
+</details>
+
+<details>
+<summary><b>安全吗？会不会影响账号？</b></summary>
+
+- 补丁**不联网、不碰登录态、不改你的设计文件和历史记录**，只在本地内存里替换界面文字。
+- 为了让补丁能注入，Pen 需要以「调试端口」方式启动 —— 这也正是不用改安装包的原因。该端口只监听本机 `127.0.0.1`。
+- 想彻底停：`Cmd+Q` 退出 Pen，再正常打开就是原版。
+</details>
+
+<details>
+<summary><b>怎么关掉 / 卸载？</b></summary>
+
+- 临时关掉：退出 Pen，直接从 Dock/启动台打开 Pen（不经启动器）＝ 原版英文
+- 彻底卸载：删掉 `~/Pen汉化/` 与克隆下来的仓库目录即可，Pen 不受影响
+- 只想停掉后台守护：`node <repo>/bin/zh-patch.mjs stop`
+</details>
+
+<details>
+<summary><b>有些地方还是英文？</b></summary>
+
+已知无法覆盖的：
+
+- 画布上直接绘制出来的文字（例如画框角上的 `Frame`）—— 它画在 canvas 里，不在界面层
+- macOS 的系统文件对话框（打开/保存）
+- 新版本新增的、词典里还没有的文案
+
+前两类没办法；第三类请[提 issue](../../issues)，附上截图和你在 `~/Pen汉化` 下运行 `node <repo>/bin/zh-patch.mjs todo --json` 的输出，我们补进词典。
+</details>
+
+<details>
+<summary><b>它会拖慢 Pen 吗？</b></summary>
+
+不会。翻译层只在界面新增/变化文字时做一次精确匹配替换；词典是纯查表，没有正则扫描、没有网络请求。
+</details>
+
+---
+
+# 给开发者 / 想自己扩展
+
+下面这部分是补丁背后的工具（`zh-patch`）。它一开始就是为 Pen 写的，但结构上通用：**任何 Electron 应用 + 任意语言的词典**都能用同一套机制。
+
+## 它怎么做到不改安装包
 
 ```
-zh-patch start
-   ├─ 带 --remote-debugging-port / --inspect 启动 App（不是改 App）
-   ├─ 连渲染进程（CDP）→ 注入「DOM 翻译层」
-   │     精确匹配替换 text / placeholder / title / aria-label / alt
-   │     MutationObserver 跟进动态渲染；重载、新窗口自动重注入
+启动器 → 带调试端口启动 Pen
+   ├─ 连渲染进程（DevTools 协议）→ 注入「翻译层」：精确匹配替换文本 / placeholder / title / aria-label，
+   │   MutationObserver 跟进动态渲染；页面重载、新窗口自动重注入
    └─ 连主进程（Node inspector）→ 改写原生菜单的 label
 ```
 
-细节见 [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)。
+为什么不用「改 `app.asar`」那套：macOS 上 `Info.plist` 里有 `ElectronAsarIntegrity` 的 SHA256 校验，改了就必须同步改 plist，而 plist 属于代码签名封印的一部分 —— 实测在带 hardened runtime 的 Pen 上重签名会直接失败、App 起不来。运行时注入则是进程退出即恢复。细节见 [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)。
 
-## 命令一览
+## 命令
 
 | 命令 | 作用 |
 |---|---|
-| `preset use pen` | 套用内置预设（配置 + 1800+ 条词典） |
-| `init --app /Applications/X.app` | 给任意 Electron App 生成配置与空词典 |
-| `doctor` | 自检：Node / 配置 / App / 端口 / 词典 |
-| `start [--daemon] [--restart]` | 带汉化启动（默认前台守护，`--daemon` 后台） |
-| `apply` | 对已开启调试端口的 App 做一次性注入 |
-| `status` | App、端口、注入状态、覆盖率 |
-| `lang list\|use <代码>` | **多语言包**：列出 / 热切换目标语言 |
-| `extract` | 抓取当前界面所有可见 UI 字符串 |
-| `todo` | **列出未收录的可见文案**（Agent 的工作清单） |
-| `verify --min 90` | **输出覆盖率**，低于阈值退出码 1 |
-| `menu [--read]` | 汉化原生菜单 / 读取当前菜单树 |
-| `dict stats\|add\|merge\|check` | 词典维护 |
+| `preset use pen` | 装好 Pen 的配置与词典（12 语言） |
+| `start` / `stop` | 带本地化启动 / 停用（`--daemon` 常驻后台） |
+| `lang list\|use <代码>` | 列出 / 切换到指定语言（热切换） |
+| `status` / `verify` | 运行状态与**本地化覆盖率** |
+| `todo` / `extract` | 列出还没翻译的界面文案 / 抓取当前界面全部文案 |
+| `dict add\|merge\|check` | 词典维护 |
+| `init --app <路径>` | 给**其它 Electron 应用**建一份配置 |
 | `install-launcher` | 生成双击启动脚本 |
-| `manifest --json` | 机器可读的命令与契约清单 |
-| `stop [--restart]` | 停止注入；`--restart` 恢复原版启动 |
+| `manifest --json` | 机器可读的命令清单（给 AI Agent 用） |
 
-所有命令都支持 `--json`（stdout 只吐 JSON），方便脚本和 Agent 解析。
-
-## 给 AI Agent 的闭环
-
-```bash
-zh-patch doctor --json                  # 1. 确认可注入
-zh-patch start --daemon --json          # 2. 拉起 App + 守护
-zh-patch extract --json                 # 3. 抓当前界面所有 UI 串
-zh-patch todo --json --write todo.json  # 4. 取未翻译清单
-#    5. Agent 翻译 todo.json → translation.json（原样保留 key / 占位符 / 快捷键）
-zh-patch dict merge translation.json    # 6. 合并（守护 2.5s 内自动重刷）
-zh-patch verify --json --min 90         # 7. 验收；不达标退出码 1，回去继续 5
-zh-patch stop --restart                 # 8. 收尾
-```
-
-契约、退出码、翻译规范见 [AGENTS.md](AGENTS.md) 与 [docs/TRANSLATING.md](docs/TRANSLATING.md)。
-
-## 覆盖范围（Pen 实测）
-
-| 区域 | 状态 |
-|---|---|
-| 12 种语言（zh-CN 人工校对，其余 AI 初翻待母语者复核）| ✅ |
-| 主页 / 编辑器工具栏 / 属性面板 / 智能体面板 / 模型选择器 | ✅ |
-| 输入框占位符（含 tiptap/ProseMirror 的伪元素占位符） | ✅ |
-| 动态文案（`Thought for 44s` → `思考了 44s`） | ✅ |
-| macOS 原生菜单栏（含 Electron 内置 role 项） | ✅ 80 个 label |
-| 右键菜单 / 系统文件对话框 | ⚠️ 由系统或构建期决定，部分或无法覆盖 |
-| 画在 canvas 里的文字、智能体回复正文、用户输入 | ❌ 有意不动 |
-
-## 已知边界
-
-- 目标 App 必须**由 zh-patch 启动**（要开调试端口）。直接点 Dock 图标启动的是原版。
-- 调试端口只监听 `127.0.0.1`，但本机其他程序可以连；不要在不可信环境长期挂着。
-- 注入层只做文本替换，不 hook API、不拦截网络、不改持久化数据。
-
-## 多语言
-
-```bash
-zh-patch lang                 # 列出 12 种语言与安装状态
-zh-patch lang use ja          # 热切换到日语（词典自动就位，2.5 秒内生效）
-zh-patch start --lang de      # 临时用德语启动，不改配置
-```
-
-完整语言表、新增语言的流程见 [docs/LANGUAGES.md](docs/LANGUAGES.md)。
-
-> 除简体中文外，其余语言为 **AI 初翻**（多 Agent 按统一术语表产出，key 逐字节校验）。可用，但欢迎母语者提 PR 校对。
+所有命令都支持 `--json`（stdout 只吐 JSON）；退出码语义见 [AGENTS.md](AGENTS.md)。
 
 ## 给别的 App 做本地化
 
 ```bash
 zh-patch init --app "/Applications/YourApp.app"
-zh-patch start                  # 启动并注入（此时词典是空的，界面没变化）
-zh-patch extract                # 把界面上所有可见英文抓下来
-zh-patch todo --write todo.json # 得到工作清单
-# 翻译 → zh-patch dict merge translation.json → 保存即生效（不用重启）
-zh-patch install-launcher       # 给普通用户一个双击入口
+zh-patch start --daemon
+zh-patch todo --write todo.json       # 收集未翻译的界面文案
+#   翻译 todo.json → translation.json（key 原样保留）
+zh-patch dict merge translation.json  # 合并，2.5 秒内界面即生效
+zh-patch verify --min 90              # 验收覆盖率
 ```
 
-换其它 App 的词典格式完全一样：`{"英文原文": "中文译文"}`。
+## 给 AI Agent 的闭环
 
-## 推广 / 检索
+```bash
+zh-patch doctor --json                 # 自检
+zh-patch start --daemon --json         # 启动 + 守护
+zh-patch todo --json --write todo.json # 工作清单
+zh-patch dict merge translation.json   # 合并译文
+zh-patch verify --json --min 90        # 覆盖率，未达标退出码 1
+```
 
-这个项目是怎么在 GitHub 上被找到的、还剩哪些高性价比动作，都记在 [docs/PROMOTION.md](docs/PROMOTION.md)（实测 `gh search repos` 的权重结论）。
+契约、故障处置、词典规范都在 [AGENTS.md](AGENTS.md)；翻译规范与术语表在 [docs/TRANSLATING.md](docs/TRANSLATING.md)；多语言与新增语言的流程在 [docs/LANGUAGES.md](docs/LANGUAGES.md)。
 
 ## 参与
 
-- 新增一份 App 词典：放 `dict/`，再提交一个 `presets/<app>.json` 与 PR。
-- 报告某条没翻到：贴 `zh-patch todo --json` 的输出。
-- 翻译规范见 [docs/TRANSLATING.md](docs/TRANSLATING.md)。
+- **报漏译 / 纠错**：[提 issue](../../issues)（附截图 + `todo --json` 输出最有效）
+- **校对语言**：直接改 `dict/pen.<语言>.json` 提 PR，`zh-CN` 之外的 11 种都欢迎
+- **新增语言**：见 [docs/LANGUAGES.md](docs/LANGUAGES.md)
+- 项目是怎么被搜到的、还能怎么做推广：[docs/PROMOTION.md](docs/PROMOTION.md)
 
 ## 关于
 
-- 内置的 Pen 词典是实际使用中逐条攒出来的（简体中文 1880 条），其余语言为 AI 初翻，欢迎补漏。
-- 本项目是社区作品，与 pen.dev / pencil.dev 官方无关。
+- 本项目是**社区作品**，与 pen.dev / pencil.dev 官方无关；相关商标与版权归其各自所有者。
+- 内置简体中文词典是实际使用中逐条攒出来的（1880 条）。若官方日后推出官方中文，这个补丁可以随之退役 —— 那是最好的结局。
 
 ## License
 
