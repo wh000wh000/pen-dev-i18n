@@ -141,6 +141,7 @@ node /path/to/pen-dev-i18n/bin/zh-patch.mjs lang use zh-CN # 切回中文
 | `preset use pen` | 装好 Pen 的配置与词典（12 语言） |
 | `start` / `stop` | 带本地化启动 / 停用（`--daemon` 常驻后台） |
 | `lang list\|use <代码>` | 列出 / 切换到指定语言（热切换） |
+| `imagegen [enable\|disable\|test]` | 生图旁路：把宿主的出图请求转发到你的 OpenAI 兼容服务 |
 | `status` / `verify` | 运行状态与**本地化覆盖率** |
 | `todo` / `extract` | 列出还没翻译的界面文案 / 抓取当前界面全部文案 |
 | `dict add\|merge\|check` | 词典维护 |
@@ -149,6 +150,45 @@ node /path/to/pen-dev-i18n/bin/zh-patch.mjs lang use zh-CN # 切回中文
 | `manifest --json` | 机器可读的命令清单（给 AI Agent 用） |
 
 所有命令都支持 `--json`（stdout 只吐 JSON）；退出码语义见 [AGENTS.md](AGENTS.md)。
+
+## 进阶：把 App 的托管出图换成你自己的模型（生图旁路）
+
+有些设计工具（例如 Pen）的出图不是在本地调 API，而是把请求发回它自己的后端：
+
+```js
+POST https://api.pencil.dev/generate-image     // 由它计费
+{ prompt, imageGeneratorProvider }             // 只有 nano_banana / nano_banana_lite / openai 三个值
+```
+
+设置里那个 `Default image generation provider` 只决定**它后端**用哪个模型，接不了你自己的服务。`zh-patch` 可以在这条链路上做**旁路**：界面、按钮、provider 下拉全都不动，只把出图的字节换成你自己模型产出的。
+
+```bash
+# ~/Pen汉化/zh-patch.config.json
+"imagegen": {
+  "enabled": true,
+  "match": "api.pencil.dev/generate-image",
+  "baseUrl": "http://127.0.0.1:15721/v1",     // 你的 OpenAI 兼容出图服务
+  "apiKey": "…",
+  "model": "gpt-5.5",                          // combo 路由的宿主模型
+  "toolModel": "gpt-image-2.5-sunburst",       // 真正出图的工具模型
+  "providerMap": { "openai": "gpt-image-2.5-sunburst", "nano_banana_lite": "gpt-image-2.5-flare" },
+  "size": "1024x1024", "quality": "high"
+}
+
+./pen-zh imagegen test      # 先自检：确认能出图
+./pen-zh stop && ./pen-zh start --daemon   # 重启守护让旁路生效
+```
+
+之后在 Pen 里正常点「生成图片」/ 让 agent 出图，实际出图的就是你配的模型。
+
+**它是怎么绕过去的**（值得一看，因为限制挺多）：
+
+1. 宿主的请求是**渲染进程**用 `fetch` 发的，而渲染进程的 CSP `connect-src` 不允许直连本机任意端口 —— 直接改 URL 会被 CSP 拦掉；
+2. 但白名单里有 `http://api.localhost:3001`。于是转发器绑在 **`[::1]:3001`**（IPv6 回环；`localhost:3001` 那半个白名单常被别的应用占着 IPv4），页面里的请求 URL 改写到它；
+3. 页面 origin 是 `pencil://editor`，属于跨源，所以转发器还要回 CORS 头（含 `OPTIONS` 预检）；
+4. 转发器把吐回来的 `b64_json` 包装成宿主期望的 `{ success: true, image: "<纯 base64>" }`，宿主照旧解码、导入文档。
+
+前提：`imagegen` 需要**守护进程常驻**（`start --daemon`），一次性 `apply` 不行。旁路失败时会自动回落到官方后端（`fallbackToOriginal`）。
 
 ## 给别的 App 做本地化
 

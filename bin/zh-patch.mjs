@@ -2,7 +2,7 @@
 import { C, fail, info, log } from '../src/util.mjs'
 import {
   cmdApply, cmdDict, cmdDoctor, cmdExtract, cmdInit, cmdInstallLauncher, cmdManifest,
-  cmdLang, cmdMenu, cmdPreset, cmdStart, cmdStatus, cmdStop, cmdTodo, cmdVerify, COMMANDS,
+  cmdImagegen, cmdLang, cmdMenu, cmdPreset, cmdStart, cmdStatus, cmdStop, cmdTodo, cmdVerify, COMMANDS,
 } from '../src/commands.mjs'
 
 // 管道被提前关闭（例如 `zh-patch lang | head`）时安静退出，而不是抛 EPIPE 崩掉
@@ -37,7 +37,7 @@ const cmd = args.shift() || (opts.version || opts.v ? 'version' : 'help')
 const table = {
   init: cmdInit, doctor: cmdDoctor, start: cmdStart, run: cmdStart, apply: cmdApply,
   stop: cmdStop, status: cmdStatus, extract: cmdExtract, todo: cmdTodo, verify: cmdVerify,
-  menu: cmdMenu, dict: cmdDict, lang: cmdLang, 'install-launcher': cmdInstallLauncher, preset: cmdPreset,
+  menu: cmdMenu, dict: cmdDict, lang: cmdLang, imagegen: cmdImagegen, 'install-launcher': cmdInstallLauncher, preset: cmdPreset,
   manifest: cmdManifest,
 }
 

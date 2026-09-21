@@ -34,5 +34,18 @@
   "menu": {
     "enabled": true
   },
-  "lang": "zh-CN"
+  "lang": "zh-CN",
+  "imagegen": {
+    "enabled": false,
+    "match": "api.pencil.dev/generate-image",
+    "bridgePort": 3001,
+    "bridgeUrl": "http://api.localhost:3001",
+    "bridgePath": "/generate-image",
+    "model": "gpt-5.5",
+    "toolModel": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "n": 1,
+    "fallbackToOriginal": true
+  }
 }

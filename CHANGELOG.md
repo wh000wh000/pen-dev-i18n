@@ -1,5 +1,14 @@
 # 更新日志
 
+## v0.6.0 —— 生图旁路（native image generation bypass）
+
+- 新增 `imagegen`：把宿主 App 的托管出图请求（如 Pen 的 `POST api.pencil.dev/generate-image`）旁路到你自己
+  的 OpenAI 兼容出图服务；界面、按钮、provider 下拉都不变，只换出图的字节
+- 绕过 CSP（改写到白名单 origin `api.localhost`，转发器绑 IPv6 回环）与 CORS（回 ACAO + 预检）
+- 新增 `zh-patch imagegen [enable|disable|test]`；旁路失败自动回落官方后端
+- 实测：Pen 内出图走 ccswitch router 的 `gpt-5.5 + gpt-image-2.5-sunburst`，返回 1254×1254 PNG
+
+
 ## v0.5.0 —— 使用者视角重写 + 一键安装
 
 - README 重新定位：从「通用工具」改为「**我们已经把 Pen 汉化好了，装上就用**」，

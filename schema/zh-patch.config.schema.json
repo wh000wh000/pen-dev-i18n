@@ -117,6 +117,74 @@
           "type": "integer"
         }
       }
+    },
+    "imagegen": {
+      "type": "object",
+      "description": "生图旁路：把宿主 App 的托管出图请求（如 Pen 的 POST https://api.pencil.dev/generate-image）转发到你自己的 OpenAI 兼容出图服务。默认关闭。",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "match": {
+          "type": "string",
+          "description": "命中宿主请求 URL 的片段"
+        },
+        "bridgePort": {
+          "type": "integer",
+          "default": 3001
+        },
+        "bridgeUrl": {
+          "type": "string",
+          "description": "转发器对外地址，必须落在宿主 CSP 的 connect-src 白名单内"
+        },
+        "bridgePath": {
+          "type": "string",
+          "default": "/generate-image"
+        },
+        "bridgeToken": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "可选的本地校验头 x-zh-patch"
+        },
+        "baseUrl": {
+          "type": "string",
+          "description": "你的 OpenAI 兼容出图服务，例如 http://127.0.0.1:15721/v1"
+        },
+        "apiKey": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "description": "宿主模型名（走 combo 路由时通常填 gpt-5.5）"
+        },
+        "toolModel": {
+          "type": "string",
+          "description": "真正出图的工具模型，例如 gpt-image-2.5-sunburst"
+        },
+        "providerMap": {
+          "type": "object",
+          "description": "按宿主 provider 分发不同 toolModel"
+        },
+        "size": {
+          "type": "string"
+        },
+        "quality": {
+          "type": "string"
+        },
+        "n": {
+          "type": "integer"
+        },
+        "fallbackToOriginal": {
+          "type": "boolean",
+          "description": "旁路失败时是否回落官方后端"
+        }
+      }
     }
   }
 }

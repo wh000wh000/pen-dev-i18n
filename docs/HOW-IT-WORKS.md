@@ -60,6 +60,23 @@ Menu.getApplicationMenu().items.forEach(i => { if (DICT[i.label]) i.label = DICT
 - 10 分钟没有任何窗口（App 关了）自动退出，避免留下野进程。
 - 只有 `--json` 会影响输出格式；退出码见 [AGENTS.md](../AGENTS.md)。
 
+## 4.5 生图旁路（把宿主的出图请求改写到你自己的服务）
+
+不是所有请求都能改 URL 就完事。以 Pen 为例，出图请求 `POST https://api.pencil.dev/generate-image` 由渲染进程直接 `fetch`，会遇到两道墙：
+
+| 墙 | 现象 | 处理 |
+|---|---|---|
+| **CSP** | `Refused to connect ... violates "connect-src ..."` —— 因为白名单里没有 `127.0.0.1:15721` | 改写到白名单里已有的 `http://api.localhost:3001`，并把转发器绑在 **IPv6 回环 `[::1]:3001`**（`localhost:3001` 常被别的应用占用 IPv4） |
+| **CORS** | `Access to fetch ... blocked by CORS policy` —— 页面 origin 是 `pencil://editor`，跨源，自定义头还会触发 `OPTIONS` 预检 | 转发器回 `Access-Control-Allow-Origin/Methods/Headers` 并处理预检 |
+
+响应形状必须匹配宿主期望：Pen 拿到 `image` 后直接 `Uint8Array.setFromBase64(image)`，所以必须是**纯 base64**，不能带 `data:image/png;base64,` 前缀；外层再包成 `{ success: true, image }`。
+
+验证过的替代方案（都不行，记录下来省得再试）：
+
+- `Page.setBypassCSP` + 刷新：对 `<meta http-equiv>` 形式的 CSP 无效；
+- 主进程代理：主进程没有通用 HTTP IPC 通道；
+- 让页面走 `blob:`/`data:`：`connect-src` 允许，但拿不到网络数据。
+
 ## 5. 平台差异
 
 | 平台 | 启动方式 | 退出方式 | 菜单注入 |
