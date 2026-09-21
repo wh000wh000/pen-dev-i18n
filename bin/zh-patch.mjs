@@ -5,6 +5,11 @@ import {
   cmdLang, cmdMenu, cmdPreset, cmdStart, cmdStatus, cmdStop, cmdTodo, cmdVerify, COMMANDS,
 } from '../src/commands.mjs'
 
+// 管道被提前关闭（例如 `zh-patch lang | head`）时安静退出，而不是抛 EPIPE 崩掉
+for (const stream of [process.stdout, process.stderr]) {
+  stream.on('error', (e) => { if (e && e.code === 'EPIPE') process.exit(0) })
+}
+
 const argv = process.argv.slice(2)
 
 // 解析 --flag / --key value，其余为位置参数
