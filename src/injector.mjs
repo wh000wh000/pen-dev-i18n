@@ -12,7 +12,6 @@ export function engineVersion(config, dict) {
     .update(ENGINE_SRC)
     .update(JSON.stringify(dict))
     .update(JSON.stringify(config.engine || {}))
-    .update(JSON.stringify(config.branding || {}))
     .digest('hex').slice(0, 16)
 }
 
@@ -27,7 +26,6 @@ export function buildBootScript(config, dict) {
     pseudoAttrs: config.engine.pseudoAttrs,
     attrMaxLength: config.engine.attrMaxLength,
     rules: config.engine.rules,
-    branding: config.branding || { enabled: false },
     lang: config.lang || null,
   }
   return `window.__ZH_PATCH_BOOT__ = ${JSON.stringify(boot)};\n${ENGINE_SRC}`

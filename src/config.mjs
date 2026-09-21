@@ -28,16 +28,6 @@ export const DEFAULT_CONFIG = {
     rules: [],
   },
   menu: { enabled: true, extraKeys: [] },
-  // 汉化署名角标：默认关闭。开启后会在窗口角落显示一条【明确标注来源】的小标签，
-  // 它是 zh-patch 的署名，不是宿主 App 的界面元素。用 `zh-patch brand --enable --url ...` 打开。
-  branding: {
-    enabled: false,
-    text: '中文汉化：zh-patch',
-    link: null,
-    corner: 'bottom-center',
-    opacity: 0.5,
-    dismissible: true,
-  },
   watch: { intervalMs: 2500, menuIntervalMs: 8000, exitAfterIdleMs: 600000 },
 }
 

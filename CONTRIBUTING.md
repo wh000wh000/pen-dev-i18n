@@ -37,4 +37,4 @@ zh-patch start --daemon && zh-patch todo --write todo.json   # 收集 → 翻译
 
 - 不要修改目标 App 的 `app.asar`（会破坏代码签名与完整性校验）
 - 不要把智能体回复、用户输入、设计稿内容当界面文案翻译
-- 不要把署名角标做成伪装成宿主 App 界面的广告
+- 不要在界面里注入伪装成宿主 App 元素的广告或推广位

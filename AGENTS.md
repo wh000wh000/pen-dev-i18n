@@ -110,17 +110,7 @@ $N verify --lang <code> --json --min 90
 - 不要把智能体回复、用户输入、设计稿内容当文案翻译。
 - 不要在词典里写正则或脚本（词典只做精确匹配；动态文案请用 `engine.rules`）。
 
-## 6. 汉化署名（branding）
-
-仓库默认 **关闭**。开启后会在窗口角落渲染一条半透明小标签，文案形如「中文汉化：example.com」，由 `zh-patch brand` 控制：
-
-```bash
-zh-patch brand --enable --url https://example.com --text "中文汉化：example.com"
-```
-
-**Agent 注意**：这条标签是对「汉化由谁提供」的署名，**不要**改写成像宿主 App 自有功能的样式、也不要去掉来源标注去做商业推广 —— 那属于冒用第三方产品背书，会误导用户并可能导致项目被投诉。用户明确要求署名时照做即可；没有明确要求时保持默认关闭。
-
-## 7. 给维护者的建议改动路径
+## 6. 给维护者的建议改动路径
 
 1. 新 App 词典：`dict/<app>.zh.json` + `presets/<app>.json`。
 2. 新平台差异（Windows/Linux 启动方式）：改 `src/app.mjs`。

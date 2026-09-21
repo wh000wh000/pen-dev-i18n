@@ -117,45 +117,6 @@
           "type": "integer"
         }
       }
-    },
-    "branding": {
-      "type": "object",
-      "description": "汉化署名角标。默认关闭；开启后窗口角落出现一条明确标注来源的小标签（是 zh-patch 的署名，不是宿主 App 的界面元素）。",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "default": false
-        },
-        "text": {
-          "type": "string",
-          "description": "角标文案，例如「中文汉化：xxx」"
-        },
-        "link": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "可选链接（会显示域名部分）"
-        },
-        "corner": {
-          "type": "string",
-          "enum": [
-            "bottom-center",
-            "bottom-left",
-            "bottom-right",
-            "top-right"
-          ],
-          "default": "bottom-center"
-        },
-        "opacity": {
-          "type": "number",
-          "description": "默认 0.5，鼠标悬停变 1"
-        },
-        "dismissible": {
-          "type": "boolean",
-          "description": "是否允许用户点 × 永久隐藏（写入 localStorage）"
-        }
-      }
     }
   }
 }
