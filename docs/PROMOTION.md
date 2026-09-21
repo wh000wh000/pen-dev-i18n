@@ -28,7 +28,7 @@
 
 1. **app 名进仓库名（可选加强）**：如果想让「pencil」也命中名字，可把仓库改成 `pen-pencil-i18n`；代价是丢掉 `dev` 分词。当前选择保留 `pen-dev`，靠描述里的 `pencil.dev` 覆盖。
 2. **用 topic 页吃流量**：`github.com/topics/pen-dev` 与 `github.com/topics/pencil-dev` 目前仓库极少，我们排前 3 —— 这两个页面对 Google 是可达的。
-3. **写一篇中文长文**（发布在 cc8.cc，再回链 GitHub）：标题直接打关键词，例如
+3. **写一篇中文长文**（发布在你自己的站点，再回链 GitHub）：标题直接打关键词，例如
    《pen.dev 汉化教程：不修改 App、12 种语言热切换》。文章里放 GitHub 链接 —— **这是唯一能显著提升 Google 排名的杠杆**（反链）。
 4. **中文社区分发**：V2EX（创意/分享节点）、少数派、即刻、小红书、B 站短的录屏（语言热切换的 10 秒演示非常适合传播）、掘金/思否。
 5. **Show HN / Reddit**：`Show HN: Runtime localization for any Electron app (no asar patching)`；Reddit 的 r/electronjs、r/SideProject。
