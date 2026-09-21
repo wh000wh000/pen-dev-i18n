@@ -29,7 +29,8 @@
     "pseudoAttrs": [
       "data-placeholder"
     ],
-    "attrMaxLength": 160
+    "attrMaxLength": 160,
+    "auditSkipSelector": ".agent-chat-text"
   },
   "menu": {
     "enabled": true

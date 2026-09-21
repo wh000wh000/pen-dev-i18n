@@ -1,5 +1,12 @@
 # 更新日志
 
+## v0.6.1 —— 审计口径修正
+
+- `todo` / `verify` 不再把智能体正文、用户输入这类**内容**算作未翻译文案
+- 新增 `engine.auditSkipSelector`（Pen 预设默认 `.agent-chat-text`）；
+  只影响统计口径，不影响翻译本身
+
+
 ## v0.6.0 —— 生图旁路（native image generation bypass）
 
 - 新增 `imagegen`：把宿主 App 的托管出图请求（如 Pen 的 `POST api.pencil.dev/generate-image`）旁路到你自己

@@ -26,6 +26,8 @@ export const DEFAULT_CONFIG = {
     pseudoAttrs: ['data-placeholder'],
     attrMaxLength: 160,
     rules: [],
+    // 只影响 todo/verify 的统计口径：这些容器里是「内容」（智能体正文、用户输入），不是界面文案
+    auditSkipSelector: '',
   },
   menu: { enabled: true, extraKeys: [] },
   // 生图旁路：把宿主 App 的托管出图请求转发到你自己的 OpenAI 兼容出图服务。
