@@ -1,17 +1,66 @@
 {
-  "name": "zh-patch",
-  "version": "0.1.0",
-  "description": "Electron 应用运行时汉化补丁：不改 App 本体、可一键撤回，并对 AI Agent 友好（含 Pen/pencil.dev 现成词典）",
+  "name": "pen-dev-i18n",
+  "version": "0.4.0",
+  "description": "Pen / pencil.dev 汉化补丁 · Electron 应用运行时本地化（12 种语言）· 不改 app.asar、可一键撤回、支持热切换 · 对 AI Agent 友好",
   "type": "module",
-  "bin": { "zh-patch": "bin/zh-patch.mjs" },
-  "files": ["bin", "src", "presets", "dict", "schema", "docs", "README.md", "AGENTS.md", "LICENSE"],
-  "engines": { "node": ">=20" },
+  "bin": {
+    "zh-patch": "bin/zh-patch.mjs",
+    "pen-i18n": "bin/zh-patch.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "presets",
+    "dict",
+    "schema",
+    "docs",
+    "README.md",
+    "AGENTS.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node bin/zh-patch.mjs start",
     "doctor": "node bin/zh-patch.mjs doctor",
     "test": "node bin/zh-patch.mjs manifest --json > /dev/null && node bin/zh-patch.mjs help > /dev/null && echo tests-ok"
   },
-  "keywords": ["electron", "localization", "i18n", "chinese", "zh-CN", "patch", "cdp", "agent", "pen", "pencil"],
+  "keywords": [
+    "pen",
+    "pen.dev",
+    "pencil",
+    "pencil.dev",
+    "pen-dev",
+    "汉化",
+    "汉化补丁",
+    "中文",
+    "简体中文",
+    "繁体中文",
+    "chinese",
+    "zh-cn",
+    "localization",
+    "i18n",
+    "translation",
+    "multi-language",
+    "electron",
+    "runtime-patch",
+    "app-asar",
+    "devtools-protocol",
+    "cdp",
+    "cli",
+    "ai-agent",
+    "agent-friendly",
+    "设计工具",
+    "design-tools"
+  ],
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/wh000wh000/zh-patch.git" }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wh000wh000/pen-dev-i18n.git"
+  },
+  "homepage": "https://github.com/wh000wh000/pen-dev-i18n#readme",
+  "bugs": {
+    "url": "https://github.com/wh000wh000/pen-dev-i18n/issues"
+  }
 }
