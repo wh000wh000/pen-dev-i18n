@@ -16,7 +16,8 @@ import { listTargets, portAlive } from './cdp.mjs'
 
 /** 载入配置，并支持用 --lang / --dict 临时覆盖语言包 */
 function cfg(opts = {}, { allowMissing = false } = {}) {
-  const { config } = loadConfig({ configPath: opts.config, allowMissing })
+  // --dir 既表示「在哪个目录里操作」，也表示去哪里找配置（安装脚本会从仓库根目录调用）
+  const { config } = loadConfig({ cwd: opts.dir || process.cwd(), configPath: opts.config, allowMissing })
   if (!config) return null
   if (opts.lang) {
     const dp = dictPathForLang(config, String(opts.lang))
@@ -521,8 +522,17 @@ export async function cmdPreset(args, opts) {
     // 别把用户已有的署名/品牌配置冲掉：preset 只提供默认值
     if (previous && previous.engine && previous.engine.rules) cfg.engine.rules = previous.engine.rules
     writeJson(target, cfg)
-    return output({ preset: name, config: path.join(dir, CONFIG_NAME), dict: dictDst, entries }, () => {
-      ok(`已套用预设 ${name}：配置 + ${entries} 条词典`)
+    // 把该 App 的所有语言词典都拷过去（用户随时 lang use 切换，不需要联网再下）
+    let extraLangs = 0
+    try {
+      for (const f of fs.readdirSync(path.join(ROOT, 'dict'))) {
+        if (!f.startsWith(`${preset.app ? name : name}.`) || !f.endsWith('.json')) continue
+        const dst = path.join(dir, 'dict', f)
+        if (!exists(dst)) { fs.copyFileSync(path.join(ROOT, 'dict', f), dst); extraLangs++ }
+      }
+    } catch {}
+    return output({ preset: name, config: path.join(dir, CONFIG_NAME), dict: dictDst, entries, extraLangs }, () => {
+      ok(`已套用预设 ${name}：配置 + 主语言词典 ${entries} 条${extraLangs ? `，另装入 ${extraLangs} 个语言包` : ''}`)
       info(`   注意：预设里的 App 路径是 ${preset.app.path}，若你的安装位置不同请改配置。`)
     }, opts.json)
   }
