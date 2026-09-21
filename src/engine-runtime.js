@@ -187,9 +187,22 @@
   }
   function schedule(n) {
     if (pending.indexOf(n) < 0) pending.push(n)
-    if (!scheduled) { scheduled = true; (window.requestAnimationFrame || setTimeout)(flush) }
+    if (scheduled) return
+    scheduled = true
+    // 窗口在后台时 requestAnimationFrame 会被节流甚至不触发，改用 setTimeout
+    if (document.hidden || !window.requestAnimationFrame) setTimeout(flush, 0)
+    else window.requestAnimationFrame(flush)
   }
   function scanAll() { if (document.body) schedule(document.body) }
+
+  /** 同步、立即把整页翻一遍（给 CLI 的 audit / 后台窗口用） */
+  function applyNow() {
+    if (!document.body) return 0
+    pending.push(document.body)
+    scheduled = false
+    flush()
+    return stats.text + stats.attr + stats.pseudo
+  }
 
   /** 把上一次翻译过的节点还原成原文（换语言/换词典时先做这一步） */
   function restoreAll() {
@@ -323,7 +336,7 @@
     restore: restoreAll,
     __translated: translatedSet,
     dictSize: Object.keys(DICT).length,
-    applyNow: scanAll,
+    applyNow: applyNow,
     audit: audit,
     stats: stats,
     destroy: function () {
