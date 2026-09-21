@@ -28,6 +28,25 @@ export const DEFAULT_CONFIG = {
     rules: [],
   },
   menu: { enabled: true, extraKeys: [] },
+  // 生图旁路：把宿主 App 的托管出图请求转发到你自己的 OpenAI 兼容出图服务。
+  // 默认关闭。开启后由 `start` 的守护进程在本机 IPv6 回环（CSP 白名单 origin）上起转发器。
+  imagegen: {
+    enabled: false,
+    match: '/generate-image',          // 命中宿主请求 URL 的片段
+    bridgePort: 3001,
+    bridgeUrl: 'http://api.localhost:3001',
+    bridgePath: '/generate-image',
+    bridgeToken: null,
+    baseUrl: 'http://127.0.0.1:15721/v1',
+    apiKey: null,
+    model: 'gpt-5.5',
+    toolModel: 'gpt-image-2.5-sunburst',
+    providerMap: {},
+    size: '1024x1024',
+    quality: 'high',
+    n: 1,
+    fallbackToOriginal: true,
+  },
   watch: { intervalMs: 2500, menuIntervalMs: 8000, exitAfterIdleMs: 600000 },
 }
 

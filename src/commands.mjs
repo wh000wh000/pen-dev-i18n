@@ -15,6 +15,8 @@ import { listTargets, portAlive } from './cdp.mjs'
 
 
 /** 载入配置，并支持用 --lang / --dict 临时覆盖语言包 */
+function ok_line(msg) { ok(msg) }
+
 function cfg(opts = {}, { allowMissing = false } = {}) {
   // --dir 既表示「在哪个目录里操作」，也表示去哪里找配置（安装脚本会从仓库根目录调用）
   const { config } = loadConfig({ cwd: opts.dir || process.cwd(), configPath: opts.config, allowMissing })
@@ -157,6 +159,9 @@ export async function cmdStart(args, opts) {
       if (type === 'inject') info(`  重新注入 ${payload.url || ''}`)
       else if (type === 'reload') info(`  词典已热重载：${payload.lang || ''} ${payload.entries} 条`)
       else if (type === 'menu') info(`  菜单校准 ${JSON.stringify(payload).slice(0, 120)}`)
+      else if (type === 'image-bridge') info(payload.closed ? '  生图旁路已停止' : `  生图旁路已启动：${payload.url}`)
+      else if (type === 'image-bridge-error') info(`  ⚠️ 生图旁路启动失败：${payload.error}（已自动关闭旁路，出图仍走官方后端）`)
+      else if (type === 'imagegen') info(`  ${payload.message}`)
       else if (type === 'idle-exit') info('  App 已关闭，守护退出')
     },
   })
@@ -457,6 +462,73 @@ export async function cmdLang(args, opts) {
   }, opts.json)
 }
 
+
+/* -------------------------------------------------------------- imagegen */
+
+/**
+ * 生图旁路：把宿主 App 的托管出图请求转发到你自己的 OpenAI 兼容出图服务。
+ * 默认关闭；`enable` 后由 `start` 的守护进程在 CSP 白名单 origin 上起转发器。
+ */
+export async function cmdImagegen(args, opts) {
+  const config = cfg(opts)
+  const ig = { ...(config.imagegen || {}) }
+  const sub = args[0]
+  const hasFlags = ['enable', 'disable'].some(k => opts[k] !== undefined)
+
+  if (sub === 'test') {
+    const { startImageBridge } = await import('./imagegen-bridge.mjs')
+    let bridge
+    try {
+      bridge = await startImageBridge({ ...ig, bridgePort: 0, bridgeToken: null }, { log: () => {} })
+      const res = await fetch(bridge.url + '/generate-image', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ prompt: 'a red apple on a white table', imageGeneratorProvider: 'openai' }),
+      })
+      const j = await res.json()
+      const b64 = j.image || ''
+      const ok = res.ok && j.success && b64.length > 1000
+      return output({ ok, httpStatus: res.status, b64KB: Math.round(b64.length / 1024), model: ig.model, toolModel: ig.toolModel, baseUrl: ig.baseUrl },
+        () => ok ? ok_line(`出图成功：${Math.round(b64.length / 1024)}KB（${ig.model}${ig.toolModel ? ' + ' + ig.toolModel : ''}）`) : fail(`出图失败：${JSON.stringify(j).slice(0, 200)}`), opts.json)
+    } catch (e) {
+      return output({ ok: false, error: String(e.message || e) }, () => fail(`出图失败：${e.message}`), opts.json)
+    } finally { if (bridge) await bridge.close() }
+  }
+
+  if (sub === 'enable' || opts.enable) {
+    ig.enabled = true
+    const raw = readJson(config.__file) || {}
+    raw.imagegen = ig
+    writeJson(config.__file, raw)
+    return output({ imagegen: ig }, () => {
+      ok('已开启生图旁路')
+      log(`   ${ig.model}${ig.toolModel ? ' + ' + ig.toolModel : ''}  ←  ${ig.baseUrl}`)
+      info('   重启守护生效：zh-patch stop && zh-patch start --daemon')
+    }, opts.json)
+  }
+  if (sub === 'disable' || opts.disable) {
+    ig.enabled = false
+    const raw = readJson(config.__file) || {}
+    raw.imagegen = ig
+    writeJson(config.__file, raw)
+    return output({ imagegen: ig }, () => ok('已关闭生图旁路（出图回到宿主官方后端）'), opts.json)
+  }
+
+  const bridgeUp = await (async () => {
+    try { const r = await fetch((ig.bridgeUrl || 'http://api.localhost:3001') + '/__zh-patch-ping'); return r.status } catch { return null }
+  })()
+  return output({ imagegen: ig, bridgeReachable: bridgeUp }, () => {
+    head('生图旁路')
+    log(`  状态    ${ig.enabled ? `${C.green}开启${C.reset}` : `${C.dim}关闭${C.reset}`}`)
+    log(`  命中    ${ig.match || '/generate-image'}`)
+    log(`  转发器  ${ig.bridgeUrl || '-'}（${bridgeUp ? '可达' : '未运行'}）`)
+    log(`  上游    ${ig.baseUrl || '-'}`)
+    log(`  模型    ${ig.model || '-'}${ig.toolModel ? ' + ' + ig.toolModel : ''}`)
+    log('')
+    info('用法：zh-patch imagegen enable|disable|test')
+  }, opts.json)
+}
+
 /* -------------------------------------------------------------- manifest */
 
 export const COMMANDS = {
@@ -472,6 +544,7 @@ export const COMMANDS = {
   menu: { usage: 'menu [--read]', desc: '汉化原生菜单 / 读取当前菜单树', json: true },
   dict: { usage: 'dict <stats|add|merge|check> [args]', desc: '词典维护', json: true },
   lang: { usage: 'lang <list|use 语言代码>', desc: '多语言包：列出 / 切换目标语言', json: true },
+  imagegen: { usage: 'imagegen [enable|disable|test]', desc: '生图旁路：把宿主的出图请求转发到你的 OpenAI 兼容出图服务', json: true },
   'install-launcher': { usage: 'install-launcher [--dir .]', desc: '生成双击启动脚本', json: true },
   preset: { usage: 'preset <list|use 名字> [--dir .]', desc: '查看/套用内置预设（如 pen）', json: true },
   manifest: { usage: 'manifest', desc: '输出机器可读的命令清单（给 Agent 用）', json: true },
@@ -481,6 +554,10 @@ export async function cmdApply(args, opts) {
   const config = cfg(opts)
   const dict = loadDict(config)
   if (!(await portAlive(config.debug.pagePort))) { fail('页面调试端口不可用。用 zh-patch start 启动 App，或先 apply 前手动带 --remote-debugging-port 启动。'); process.exit(4) }
+  if (config.imagegen && config.imagegen.enabled) {
+    warn('配置里开了生图旁路，但 apply 是一次性命令，转发器会随之退出。')
+    warn('要长期生效请用：zh-patch start --daemon')
+  }
   const injected = await injectTargets(config, dict)
   const menu = await patchMenu(config, dict)
   const audit = await auditPage(config)
@@ -521,6 +598,7 @@ export async function cmdPreset(args, opts) {
     cfg.lang = lang
     // 别把用户已有的署名/品牌配置冲掉：preset 只提供默认值
     if (previous && previous.engine && previous.engine.rules) cfg.engine.rules = previous.engine.rules
+    if (previous && previous.imagegen) cfg.imagegen = { ...cfg.imagegen, ...previous.imagegen }
     writeJson(target, cfg)
     // 把该 App 的所有语言词典都拷过去（用户随时 lang use 切换，不需要联网再下）
     let extraLangs = 0

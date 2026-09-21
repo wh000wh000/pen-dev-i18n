@@ -14,6 +14,7 @@
   var SKIP_SELECTOR = BOOT.skipSelector || '[contenteditable="true"],[data-zh-patch-skip]'
   var PSEUDO_ATTRS = BOOT.pseudoAttrs || ['data-placeholder']
   var LIMIT = BOOT.attrMaxLength || 160
+  var IMAGEGEN = BOOT.imagegen || null
   var AUDIT_IGNORE = []
   ;(BOOT.auditIgnore || []).forEach(function (p) { try { AUDIT_IGNORE.push(new RegExp(p, 'i')) } catch (e) {} })
 
@@ -266,6 +267,31 @@
       }
     }
   })
+  // ---- 生图旁路：把宿主的出图请求改写到本地转发器（CSP 白名单 origin）------------
+  function installImagegen() {
+    if (!IMAGEGEN || !IMAGEGEN.enabled || !IMAGEGEN.bridgeUrl) return
+    if (window.__zhPatchFetchInstalled) return
+    var origFetch = window.fetch ? window.fetch.bind(window) : null
+    if (!origFetch) return
+    var match = IMAGEGEN.match || '/generate-image'
+    window.fetch = function (input, init) {
+      try {
+        var url = typeof input === 'string' ? input : (input && input.url) || ''
+        if (url && url.indexOf(match) >= 0) {
+          var target = IMAGEGEN.bridgeUrl + (IMAGEGEN.bridgePath || '/generate-image')
+          var headers = {}
+          try { new Headers(init && init.headers).forEach(function (v, k) { headers[k] = v }) } catch (e) {}
+          headers['x-zh-patch'] = IMAGEGEN.token || ''
+          var nextInit = Object.assign({}, init, { headers: headers })
+          if (typeof input === 'string') return origFetch(target, nextInit)
+          try { return origFetch(new Request(target, input), nextInit) } catch (e) { return origFetch(target, nextInit) }
+        }
+      } catch (e) {}
+      return origFetch(input, init)
+    }
+    window.__zhPatchFetchInstalled = true
+  }
+
   function start() {
     if (!document.body) { timers.push(setTimeout(start, 100)); return }
     obs.observe(document.body, {
@@ -273,6 +299,7 @@
       attributes: true, attributeFilter: ATTRS
     })
     scanAll()
+    installImagegen()
     ;[300, 900, 2000, 4000].forEach(function (d) { timers.push(setTimeout(scanAll, d)) })
     timers.push(setInterval(function () {
       var els = document.querySelectorAll('[data-placeholder],[placeholder]')

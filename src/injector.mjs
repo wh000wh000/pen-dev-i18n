@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { ROOT } from './config.mjs'
+import { startImageBridge } from './imagegen-bridge.mjs'
 import { listTargets, pickPage, portAlive, withTarget } from './cdp.mjs'
 import { sleep } from './util.mjs'
 
@@ -12,6 +13,7 @@ export function engineVersion(config, dict) {
     .update(ENGINE_SRC)
     .update(JSON.stringify(dict))
     .update(JSON.stringify(config.engine || {}))
+    .update(JSON.stringify(config.imagegen || {}))
     .digest('hex').slice(0, 16)
 }
 
@@ -27,6 +29,15 @@ export function buildBootScript(config, dict) {
     attrMaxLength: config.engine.attrMaxLength,
     rules: config.engine.rules,
     lang: config.lang || null,
+    imagegen: (config.imagegen && config.imagegen.enabled)
+      ? {
+          enabled: true,
+          match: config.imagegen.match || '/generate-image',
+          bridgeUrl: config.imagegen.bridgeUrl,
+          bridgePath: config.imagegen.bridgePath || '/generate-image',
+          token: config.imagegen.bridgeToken || null,
+        }
+      : { enabled: false },
   }
   return `window.__ZH_PATCH_BOOT__ = ${JSON.stringify(boot)};\n${ENGINE_SRC}`
 }
@@ -146,6 +157,25 @@ export async function watch(config, dict, { onEvent = () => {}, signal, reload =
   let lastSeen = Date.now()
   let lastMenu = ''
   let stopped = false
+  let bridge = null
+
+  // 生图旁路需要一个常驻的本地转发器；只有它真的起来了，才让页面改写请求 URL
+  const ensureBridge = async () => {
+    const want = !!(config.imagegen && config.imagegen.enabled)
+    if (want && !bridge) {
+      try {
+        bridge = await startImageBridge(config.imagegen, { log: (message) => onEvent('imagegen', { message }) })
+        config.imagegen.bridgeUrl = bridge.url
+        onEvent('image-bridge', { url: bridge.url })
+      } catch (e) {
+        config.imagegen.enabled = false
+        onEvent('image-bridge-error', { error: String(e.message || e) })
+      }
+    } else if (!want && bridge) {
+      await bridge.close(); bridge = null
+      onEvent('image-bridge', { closed: true })
+    }
+  }
   if (signal) signal.addEventListener('abort', () => { stopped = true })
 
   const tick = async () => {
@@ -162,6 +192,7 @@ export async function watch(config, dict, { onEvent = () => {}, signal, reload =
         }
       } catch (e) { onEvent('reload-error', { error: String(e.message || e) }) }
     }
+    await ensureBridge()
     const results = await injectTargets(config, dict)
     if (config.debug.pagePort && (await portAlive(config.debug.pagePort))) lastSeen = Date.now()
     for (const r of results) if (r.result && !r.result.skipped) onEvent('inject', r)
@@ -180,5 +211,6 @@ export async function watch(config, dict, { onEvent = () => {}, signal, reload =
     await sleep(config.watch?.intervalMs ?? 2500)
     await tick()
   }
+  if (bridge) { try { await bridge.close() } catch {} }
   return { stopped: true }
 }
