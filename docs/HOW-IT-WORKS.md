@@ -66,7 +66,7 @@ Menu.getApplicationMenu().items.forEach(i => { if (DICT[i.label]) i.label = DICT
 
 | 墙 | 现象 | 处理 |
 |---|---|---|
-| **CSP** | `Refused to connect ... violates "connect-src ..."` —— 因为白名单里没有 `127.0.0.1:15721` | 改写到白名单里已有的 `http://api.localhost:3001`，并把转发器绑在 **IPv6 回环 `[::1]:3001`**（`localhost:3001` 常被别的应用占用 IPv4） |
+| **CSP** | `Refused to connect ... violates "connect-src ..."` —— 因为白名单里没有你那个本机端口（例：`127.0.0.1:8080`） | 改写到白名单里已有的 `http://api.localhost:3001`，并把转发器绑在 **IPv6 回环 `[::1]:3001`**（`localhost:3001` 常被别的应用占用 IPv4） |
 | **CORS** | `Access to fetch ... blocked by CORS policy` —— 页面 origin 是 `pencil://editor`，跨源，自定义头还会触发 `OPTIONS` 预检 | 转发器回 `Access-Control-Allow-Origin/Methods/Headers` 并处理预检 |
 
 响应形状必须匹配宿主期望：Pen 拿到 `image` 后直接 `Uint8Array.setFromBase64(image)`，所以必须是**纯 base64**，不能带 `data:image/png;base64,` 前缀；外层再包成 `{ success: true, image }`。

@@ -167,7 +167,7 @@ POST https://api.pencil.dev/generate-image     // 由它计费
 "imagegen": {
   "enabled": true,
   "match": "api.pencil.dev/generate-image",
-  "baseUrl": "http://127.0.0.1:15721/v1",     // 你的 OpenAI 兼容出图服务
+  "baseUrl": "http://127.0.0.1:<你的端口>/v1",  // 你的 OpenAI 兼容出图服务
   "apiKey": "…",
   "model": "gpt-5.5",                          // combo 路由的宿主模型
   "toolModel": "gpt-image-2.5-sunburst",       // 真正出图的工具模型

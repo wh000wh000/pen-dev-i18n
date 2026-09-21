@@ -39,7 +39,7 @@ export const DEFAULT_CONFIG = {
     bridgeUrl: 'http://api.localhost:3001',
     bridgePath: '/generate-image',
     bridgeToken: null,
-    baseUrl: 'http://127.0.0.1:15721/v1',
+    baseUrl: 'http://127.0.0.1:8080/v1',
     apiKey: null,
     model: 'gpt-5.5',
     toolModel: 'gpt-image-2.5-sunburst',

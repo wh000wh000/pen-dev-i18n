@@ -151,7 +151,7 @@
         },
         "baseUrl": {
           "type": "string",
-          "description": "你的 OpenAI 兼容出图服务，例如 http://127.0.0.1:15721/v1"
+          "description": "你的 OpenAI 兼容出图服务，例如 http://127.0.0.1:8080/v1"
         },
         "apiKey": {
           "type": [
