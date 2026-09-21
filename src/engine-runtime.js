@@ -15,6 +15,7 @@
   var PSEUDO_ATTRS = BOOT.pseudoAttrs || ['data-placeholder']
   var LIMIT = BOOT.attrMaxLength || 160
   var IMAGEGEN = BOOT.imagegen || null
+  var AUDIT_SKIP = BOOT.auditSkipSelector || ''    // 审计时忽略的容器（如智能体正文区）
   var AUDIT_IGNORE = []
   ;(BOOT.auditIgnore || []).forEach(function (p) { try { AUDIT_IGNORE.push(new RegExp(p, 'i')) } catch (e) {} })
 
@@ -217,7 +218,12 @@
     var unknown = {}
     var known = 0
     var total = 0
-    function consider(v) {
+    function inAuditSkip(el) {
+      if (!AUDIT_SKIP || !el) return false
+      try { return !!(el.closest && el.closest(AUDIT_SKIP)) } catch (e) { return false }
+    }
+    function consider(v, el) {
+      if (inAuditSkip(el)) return
       if (!v) return
       var s = String(v).replace(/\s+/g, ' ').trim()
       if (s.length < 2 || s.length > LIMIT) return
@@ -238,10 +244,14 @@
     for (var i = 0; i < all.length; i++) {
       var el = all[i]
       if (blockedAttr(el)) continue
-      for (var k = 0; k < ATTRS.length; k++) consider(el.getAttribute && el.getAttribute(ATTRS[k]))
+      if (inAuditSkip(el)) continue
+      for (var k = 0; k < ATTRS.length; k++) consider(el.getAttribute && el.getAttribute(ATTRS[k]), el)
     }
     var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-    while (w.nextNode()) { if (!blockedText(w.currentNode)) consider(w.currentNode.nodeValue) }
+    while (w.nextNode()) {
+      var node = w.currentNode
+      if (!blockedText(node)) consider(node.nodeValue, node.parentElement)
+    }
     var list = []
     for (var key in unknown) list.push(key)
     list.sort()

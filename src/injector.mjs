@@ -28,6 +28,7 @@ export function buildBootScript(config, dict) {
     pseudoAttrs: config.engine.pseudoAttrs,
     attrMaxLength: config.engine.attrMaxLength,
     rules: config.engine.rules,
+    auditSkipSelector: config.engine.auditSkipSelector,
     lang: config.lang || null,
     imagegen: (config.imagegen && config.imagegen.enabled)
       ? {

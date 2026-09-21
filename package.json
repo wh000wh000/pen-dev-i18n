@@ -1,6 +1,6 @@
 {
   "name": "pen-dev-i18n",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Pen (pencil.dev) 汉化补丁 —— 装上即用的中文界面（另含 11 种语言）；底层是一个通用的 Electron 运行时本地化工具",
   "type": "module",
   "bin": {
