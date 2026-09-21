@@ -14,8 +14,6 @@
   var SKIP_SELECTOR = BOOT.skipSelector || '[contenteditable="true"],[data-zh-patch-skip]'
   var PSEUDO_ATTRS = BOOT.pseudoAttrs || ['data-placeholder']
   var LIMIT = BOOT.attrMaxLength || 160
-  var BRAND = BOOT.branding || null
-  var BRAND_ID = 'zh-patch-brand'
   var AUDIT_IGNORE = []
   ;(BOOT.auditIgnore || []).forEach(function (p) { try { AUDIT_IGNORE.push(new RegExp(p, 'i')) } catch (e) {} })
 
@@ -268,88 +266,6 @@
       }
     }
   })
-  // ---- 汉化署名角标（可关；明确标注来源，不伪装成宿主 App 的界面）------------
-  function ensureBrand() {
-    if (!BRAND || !BRAND.enabled || !document.body) return
-    try {
-      if (document.getElementById(BRAND_ID)) return
-      if (window.localStorage && localStorage.getItem('zh-patch-brand-hidden') === '1') return
-      var corner = BRAND.corner || 'bottom-center'
-      var el = document.createElement('div')
-      el.id = BRAND_ID
-      el.setAttribute('data-zh-patch-skip', '')
-      var pos = { position: 'fixed', zIndex: '2147483000' }
-      if (corner === 'bottom-center') { pos.bottom = '6px'; pos.left = '50%'; pos.transform = 'translateX(-50%)' }
-      else if (corner === 'bottom-right') { pos.bottom = '8px'; pos.right = '8px' }
-      else if (corner === 'top-right') { pos.top = '8px'; pos.right = '8px' }
-      else { pos.bottom = '8px'; pos.left = '8px' }
-      for (var k in pos) el.style[k] = pos[k]
-      el.style.font = '11px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif'
-      el.style.padding = '2px 9px'
-      el.style.borderRadius = '999px'
-      el.style.background = 'rgba(0,0,0,.5)'
-      el.style.color = 'rgba(255,255,255,.85)'
-      el.style.opacity = String(BRAND.opacity == null ? 0.5 : BRAND.opacity)
-      el.style.pointerEvents = 'auto'
-      el.style.userSelect = 'none'
-      el.style.whiteSpace = 'nowrap'
-      el.style.transition = 'opacity .2s'
-      el.onmouseenter = function () { el.style.opacity = '1' }
-      el.onmouseleave = function () { el.style.opacity = String(BRAND.opacity == null ? 0.5 : BRAND.opacity) }
-
-      var text = BRAND.text || '本地化补丁'
-      var link = BRAND.link
-      var host = link ? String(link).replace(/^https?:\/\//, '').replace(/\/$/, '') : ''
-      var label = document.createElement('span')
-      label.style.color = 'inherit'
-      label.style.textDecoration = 'none'
-      label.style.cursor = link ? 'pointer' : 'default'
-      label.textContent = text + (host ? '  ' + host : '')
-      // 宿主 App 常拦截 window.open，所以点击 = 复制网址（更可靠，也不打断用户）
-      if (link) {
-        label.title = '点击复制网址：' + link
-        label.onclick = function (e) {
-          e.preventDefault(); e.stopPropagation()
-          var done = function () {
-            var old = label.textContent
-            label.textContent = '已复制 ' + host
-            setTimeout(function () { label.textContent = old }, 1200)
-          }
-          try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-              navigator.clipboard.writeText(link).then(done, function () { fallback() })
-            } else fallback()
-          } catch (err) { fallback() }
-          function fallback() {
-            try {
-              var ta = document.createElement('textarea')
-              ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0'
-              document.body.appendChild(ta); ta.select(); document.execCommand('copy')
-              document.body.removeChild(ta); done()
-            } catch (err2) { done() }
-          }
-        }
-      }
-      el.appendChild(label)
-
-      if (BRAND.dismissible !== false) {
-        var x = document.createElement('span')
-        x.textContent = '×'
-        x.style.marginLeft = '6px'
-        x.style.cursor = 'pointer'
-        x.style.opacity = '.7'
-        x.title = '隐藏'
-        x.onclick = function (e) {
-          e.preventDefault(); e.stopPropagation()
-          try { localStorage.setItem('zh-patch-brand-hidden', '1') } catch (err) {}
-          if (el.parentNode) el.parentNode.removeChild(el)
-        }
-        el.appendChild(x)
-      }
-      document.body.appendChild(el)
-    } catch (e) {}
-  }
-
   function start() {
     if (!document.body) { timers.push(setTimeout(start, 100)); return }
     obs.observe(document.body, {
@@ -357,7 +273,6 @@
       attributes: true, attributeFilter: ATTRS
     })
     scanAll()
-    ensureBrand()
     ;[300, 900, 2000, 4000].forEach(function (d) { timers.push(setTimeout(scanAll, d)) })
     timers.push(setInterval(function () {
       var els = document.querySelectorAll('[data-placeholder],[placeholder]')
@@ -380,8 +295,6 @@
       timers = []
       var st = document.querySelector('style[data-zh-patch]')
       if (st && st.parentNode) st.parentNode.removeChild(st)
-      var bd = document.getElementById(BRAND_ID)
-      if (bd && bd.parentNode) bd.parentNode.removeChild(bd)
     }
   }
   start()

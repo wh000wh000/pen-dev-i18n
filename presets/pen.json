@@ -34,13 +34,5 @@
   "menu": {
     "enabled": true
   },
-  "branding": {
-    "enabled": false,
-    "text": "中文汉化：zh-patch",
-    "link": null,
-    "corner": "bottom-center",
-    "opacity": 0.5,
-    "dismissible": true
-  },
   "lang": "zh-CN"
 }

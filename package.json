@@ -1,6 +1,6 @@
 {
   "name": "pen-dev-i18n",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Pen / pencil.dev 汉化补丁 · Electron 应用运行时本地化（12 种语言）· 不改 app.asar、可一键撤回、支持热切换 · 对 AI Agent 友好",
   "type": "module",
   "bin": {
