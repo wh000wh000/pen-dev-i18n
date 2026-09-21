@@ -1,29 +1,46 @@
-# zh-patch
+# Pen 汉化补丁 · pencil.dev 中文 / 多语言本地化（pen-dev-i18n）
 
-**给 Electron 应用做运行时本地化 —— 不修改 App 本体、可一键撤回，并且对 AI Agent 友好。**
+[![languages](https://img.shields.io/badge/languages-12-blue)](#多语言)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![target](https://img.shields.io/badge/target-Electron%20apps-47848F)](#给别的-app-做本地化)
+[![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](#命令一览)
+[![agent](https://img.shields.io/badge/AI%20Agent-friendly-8A2BE2)](AGENTS.md)
 
-支持**任意语言**：仓库自带 **12 种语言**的 Pen (pencil.dev) 词典（简中 / 繁中 / 日 / 韩 / 西 / 法 / 德 / 葡 / 俄 / 意 / 越 / 土），含 macOS 原生菜单栏，一条命令热切换。
+**专为 [Pen (pencil.dev)](https://pen.dev) 做的汉化 + 多语言补丁**：一条命令让 Pen 的界面变成
+**简体中文 / 繁體中文 / 日本語 / 한국어 / Español / Français / Deutsch / Português / Русский / Italiano / Tiếng Việt / Türkçe**（12 种，含 macOS 原生菜单栏）。
+
+**不修改 App 本体** —— 不动 `app.asar`、不破坏代码签名、随时一键撤回，Pen 更新后依然可用；语言可热切换，不用重启。
+
+同一个工具对**任何 Electron 应用**都适用（VS Code、Obsidian、Discord 这类同架构应用），换一份词典即可。
+
+> 如果你在找这些：**pen.dev 汉化**、**pencil.dev 中文**、**Pen 中文界面 / 汉化补丁**、**pen.dev 中文版**、
+> **Electron 应用汉化工具**、**应用多语言本地化**、**AI Agent 自动翻译界面** —— 就是这里。
 
 ```bash
-zh-patch lang use ja     # 日本語
-zh-patch lang use es     # Español
-zh-patch lang use zh-TW  # 繁體中文
-```
-
-```bash
-git clone https://github.com/wh000wh000/zh-patch.git
-cd zh-patch
-npm link                      # 可选：把它变成全局 `zh-patch` 命令（不用 npm 就写 node bin/zh-patch.mjs）
+git clone https://github.com/wh000wh000/pen-dev-i18n.git
+cd pen-dev-i18n
+npm link                      # 可选：变成全局 `zh-patch` 命令（不用 npm 就写 node bin/zh-patch.mjs）
 
 mkdir -p ~/pen-zh && cd ~/pen-zh
-zh-patch preset use pen       # 套用 Pen 预设：配置 + 1800+ 条词典
+zh-patch preset use pen       # 套用 Pen 预设：配置 + 12 种语言词典
 zh-patch start                # 带汉化启动 Pen（Ctrl+C 退出；也可 --daemon 常驻）
-zh-patch verify               # 看汉化覆盖率，例如 98.8%
+zh-patch lang use ja          # 想换语言？热切换成日语，2 秒生效
+zh-patch verify               # 覆盖率，例如 98.8%
 ```
 
-> English: `zh-patch` injects a runtime localization layer into any Electron app via the DevTools Protocol (no `app.asar` patching, no code-signature breakage, instantly reversible, hot language switching), and exposes an agent-friendly CLI (`--json` everywhere, `extract` / `todo` / `verify` loop) so an AI agent can localize an app end-to-end. Bundled: Pen (pencil.dev) dictionaries in **12 languages** (zh-CN, zh-TW, ja, ko, es, fr, de, pt-BR, ru, it, vi, tr), ~1850 entries each.
+<details>
+<summary>English</summary>
 
----
+**Chinese (and 11 more languages) localization patch for Pen / pencil.dev** — plus a general-purpose runtime localization CLI for **any Electron app**.
+
+It injects a translation layer into the app's renderer via the DevTools Protocol (text nodes, attributes and pseudo-element placeholders) and rewrites the native menu labels through the main-process Node inspector. **No `app.asar` patching, no code-signature breakage, instantly reversible**, and it survives app updates.
+
+- 12 bundled Pen dictionaries: `zh-CN, zh-TW, ja, ko, es, fr, de, pt-BR, ru, it, vi, tr` (~1850 entries each)
+- **Hot language switching** — the engine restores original strings, then re-translates; no restart, no reload
+- **Agent-friendly CLI**: `extract → todo → dict merge → verify` loop, `--json` everywhere, documented exit codes ([AGENTS.md](AGENTS.md))
+- Runtime coverage audit: `zh-patch verify --json` reports how much of the visible UI is localized
+
+</details>
 
 ## 效果（同一个 App，同一个补丁）
 

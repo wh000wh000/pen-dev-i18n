@@ -7,7 +7,7 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const CONFIG_NAME = 'zh-patch.config.json'
 
 export const DEFAULT_CONFIG = {
-  $schema: 'https://raw.githubusercontent.com/wh000wh000/zh-patch/main/schema/zh-patch.config.schema.json',
+  $schema: 'https://raw.githubusercontent.com/wh000wh000/pen-dev-i18n/main/schema/zh-patch.config.schema.json',
   app: {
     name: 'MyApp',
     // macOS: .app 路径；Windows: .exe 路径；Linux: AppImage / bin 路径

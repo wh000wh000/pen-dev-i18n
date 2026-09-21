@@ -27,7 +27,7 @@ function parse(argv) {
 }
 
 const { args, opts } = parse(argv)
-const cmd = args.shift() || (opts.help || opts.h ? 'help' : 'help')
+const cmd = args.shift() || (opts.version || opts.v ? 'version' : 'help')
 
 const table = {
   init: cmdInit, doctor: cmdDoctor, start: cmdStart, run: cmdStart, apply: cmdApply,
@@ -37,7 +37,8 @@ const table = {
 }
 
 function usage() {
-  log(`${C.bold}zh-patch${C.reset} —— Electron 应用运行时汉化（对 Agent 友好）\n`)
+  log(`${C.bold}zh-patch${C.reset} —— Pen/pencil.dev 汉化补丁 · Electron 应用运行时本地化（12 语言，对 Agent 友好）`)
+  log(`${C.dim}https://github.com/wh000wh000/pen-dev-i18n${C.reset}\n`)
   log(`用法：zh-patch <命令> [参数] [--json]\n`)
   const width = Math.max(...Object.values(COMMANDS).map(c => c.usage.length))
   for (const [name, c] of Object.entries(COMMANDS)) {
